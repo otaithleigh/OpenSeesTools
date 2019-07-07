@@ -41,7 +41,7 @@ def getClassLogger(name):
 
 
 #===============================================================================
-#
+# Centroids and things
 #===============================================================================
 def areaCircularSector(d, R):
     theta = 2*np.arccos(np.abs(d)/R)
@@ -99,6 +99,9 @@ def nShapesCentroid(x, y, A):
     return xArea/area, yArea/area, area
 
 
+#===============================================================================
+# Fiber patches
+#===============================================================================
 def patchHalfCircTube2d(matTag, nf, center, side, D, t):
     """Create a set of fibers to describe half a circular tube.
 
@@ -171,9 +174,6 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
             x.append(0.0)
             y.append(centroidCircularSector(ynear, ri))
             A.append(-areaCircularSector(ynear, ri))
-
-        if i == nf - 1:
-            breakpoint()
 
         _, centroid, area = nShapesCentroid(x, y, A)
         yf = center + sign*centroid

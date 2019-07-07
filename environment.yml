@@ -1,0 +1,20 @@
+name: openseespy-ext
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python
+  - numpy
+  - pip
+  - pip:
+    - openseespy
+    - "-e ."
+  # Development
+  - ipython
+  - line_profiler
+  - yapf
+  - pytest
+  - invoke
+  - sphinx
+  - docutils
+  - doc8

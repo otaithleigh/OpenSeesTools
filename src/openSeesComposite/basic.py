@@ -51,7 +51,9 @@ def areaCircularSector(d, R):
 
 def centroidCircularSector(d, R):
     theta = 2*np.arccos(np.abs(d)/R)
-    sign = np.sign(d)
+    # NumPy sign gives 0.0 for zeroes, but we want zeroes to be positive. True
+    # gets cast to 1.0, and False to 0.0.
+    sign = np.sign(d) + (d == 0.0)
     if theta == 0.0:
         centroid = sign*R
     else:

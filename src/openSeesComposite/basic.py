@@ -11,7 +11,10 @@ __all__ = [
     'centroidCircularSector',
     'getClassLogger',
     'nShapesCentroid',
+    'patchRect2d',
     'patchHalfCircTube2d',
+    'fourFiberSectionGJ',
+    'twoFiberSection',
 ]
 
 logger = logging.getLogger(__name__)
@@ -104,6 +107,33 @@ def nShapesCentroid(x, y, A):
 #===============================================================================
 # Fiber patches
 #===============================================================================
+def patchRect2d(matTag, nf, width, startHeight, endHeight):
+    """Create a quadrilateral patch suitable for two-dimensional analyses.
+    
+    All fibers are placed on the z-axis.
+
+    Parameters
+    ----------
+    matTag : int
+        Tag of the uniaxial material to use.
+    nf : int
+        Number of fibers in the patch.
+    width : float
+        Width of the patch.
+    startHeight : float
+        Starting height of the patch.
+    endHeight : float
+        Ending height of the patch.
+    """
+    if startHeight >= endHeight:
+        logger.warning('Creating fibers with a negative area')
+    width = float(width)
+    startHeight = float(startHeight)
+    endHeight = float(endHeight)
+    ops.patch('quad', int(matTag), int(nf), 1, startHeight, -width/2, endHeight,
+              -width/2, endHeight, width/2, startHeight, width/2)
+
+
 def patchHalfCircTube2d(matTag, nf, center, side, D, t):
     """Create a set of fibers to describe half a circular tube.
 
@@ -181,3 +211,63 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
         yf = center + sign*centroid
         logger.debug(f'Creating fiber at {yf:g} with area {area:g}')
         ops.fiber(yf, 0.0, area, matTag)
+
+
+def fourFiberSectionGJ(secTag, matTag, area, Iy, Iz, GJ):
+    """Create a fiber section with four fibers with desired section properties.
+
+    Parameters
+    ----------
+    secTag
+        Section tag. If None, defines just the fibers.
+    matTag
+        Uniaxial material to use.
+    A : float
+        Desired total cross-sectional area.
+    Iy : float
+        Desired moment of inertia about the y-axis of the section.
+    Iz : float
+        Desired moment of inertia about the z-axis of the section.
+    GJ : float
+        Desired torsional stiffness of the section. Not used if `secTag` is
+        None.
+    """
+    if secTag is not None:
+        ops.section('Fiber', int(secTag), '-GJ', float(GJ))
+        fourFiberSectionGJ(None, matTag, area, Iy, Iz, GJ)
+        return
+
+    fiberA = float(0.25*area)
+    fiberZ = float(np.sqrt(Iy/area))
+    fiberY = float(np.sqrt(Iz/area))
+
+    ops.fiber(+fiberY, +fiberZ, fiberA, int(matTag))
+    ops.fiber(+fiberY, -fiberZ, fiberA, int(matTag))
+    ops.fiber(-fiberY, +fiberZ, fiberA, int(matTag))
+    ops.fiber(-fiberY, -fiberZ, fiberA, int(matTag))
+
+
+def twoFiberSection(secTag, matTag, area, I):
+    """Create a fiber section with two fibers with desired section properties.
+
+    Parameters
+    ----------
+    secTag
+        Section tag. If None, defines just the fibers.
+    matTag
+        Uniaxial material to use.
+    A : float
+        Desired total cross-sectional area.
+    I : float
+        Desired moment of inertia.
+    """
+    if secTag is not None:
+        ops.section('Fiber', int(secTag))
+        twoFiberSection(None, matTag, area, I)
+        return
+
+    fiberA = float(0.5*area)
+    fiberY = float(np.sqrt(I/area))
+
+    ops.fiber(+fiberY, 0.0, fiberA, int(matTag))
+    ops.fiber(-fiberY, 0.0, fiberA, int(matTag))

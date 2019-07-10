@@ -7,11 +7,15 @@ Installation
 
 .. code::
 
-    pip install -e "https://github.com/otaithleigh/openseespy-ext"
+    pip install -e "https://github.com/otaithleigh/OpenSees-Tools"
 
 
-openSeesComposite
-=================
+Acknowledgments
+===============
 
-A collection of functions focused on modeling steel-concrete composite columns.
-Originally written in Tcl by Mark Denavit. Ported by Peter Talley.
+Based on tooling originally developed in MATLAB and Tcl by Dr. Mark Denavit.
+See `OpenSees-Tcl-Scripts`_ and `MATLAB-Library`_.
+
+
+.. _OpenSees-Tcl-Scripts: https://github.com/denavit/OpenSees-Tcl-Scripts
+.. _MATLAB-Library: https://github.com/denavit/MATLAB-Library

@@ -12,14 +12,14 @@ setup(
     long_description_content_type='text/x-rst',
 
     package_dir={'': 'src'},
-    packages=['openSeesComposite'],
+    packages=['OpenSeesTools'],
 
     python_requires='>=3.5',
     install_requires=['openseespy', 'numpy'],
 
     author='Peter Talley, Mark D. Denavit',
     author_email='ptalley2@vols.utk.edu',
-    url='https://github.com/otaithleigh/openseespy-ext',
+    url='https://github.com/otaithleigh/OpenSees-Tools',
 
     classifiers=[
         'Programming Language :: Python :: 3',

@@ -1,4 +1,6 @@
 import logging
+import pathlib
+import tempfile
 
 import numpy as np
 import openseespy.opensees as ops
@@ -9,17 +11,21 @@ import openseespy.opensees as ops
 __all__ = [
     'areaCircularSector',
     'centroidCircularSector',
+    'fourFiberSectionGJ',
     'getClassLogger',
     'nShapesCentroid',
     'patchRect2d',
     'patchHalfCircTube2d',
-    'fourFiberSectionGJ',
+    'scratchFileFactory',
     'twoFiberSection',
 ]
 
 logger = logging.getLogger(__name__)
 
 
+#===============================================================================
+# Utilities
+#===============================================================================
 def getClassLogger(cls):
     """Get a logger scoped to the requested class.
 
@@ -42,6 +48,57 @@ def getClassLogger(cls):
     __main__.ClassWithLogger.some_func: this is a warning
     """
     return logging.getLogger(cls.__module__ + '.' + cls.__name__)
+
+
+def scratchFileFactory(analysisName, scratchPath=None, analysisID=0):
+    """Create a scratch file path generator.
+
+    Parameters
+    ----------
+    analysisName : str
+        Name of the analysis, e.g. 'SectionAnalysis'.
+    scratchPath : path_like
+        Path to the scratch directory. If None, uses the system temp directory.
+        (default: None)
+    analysisID : optional
+        Unique ID for the analysis. Useful for parallel execution, for example.
+        (default: 0)
+
+    Returns
+    -------
+    scratchFile
+        A function that takes two arguments, 'name' and 'suffix'.
+
+    Example
+    -------
+    >>> scratchFile = scratchFileFactory('TestoPresto')
+    >>> scratchFile('disp', '.dat')
+    PosixPath('/tmp/TestoPresto_disp_0.dat')
+    """
+    if scratchPath is None:
+        scratchPath = tempfile.gettempdir()
+    scratchPath = pathlib.Path(scratchPath).resolve()
+
+    def scratchFile(name, suffix='') -> pathlib.Path:
+        """
+        Parameters
+        ----------
+        name : str
+            Name of the scratch file, e.g. 'displacement'.
+        suffix : str, optional
+            Suffix to use for the scratch file. (default: '')
+        """
+        return scratchPath/f'{analysisName}_{name}_{analysisID}{suffix}'
+
+    return scratchFile
+
+
+class OpenSeesAnalysis():
+    def __init__(self, scratchPath=None, analysisID=None):
+        self.logger = getClassLogger(self.__class__)
+        self.scratchFile = scratchFileFactory(self.__class__.__name__,
+                                              scratchPath, analysisID)
+        self.deleteFiles = True
 
 
 #===============================================================================
@@ -105,12 +162,103 @@ def nShapesCentroid(x, y, A):
     return xArea/area, yArea/area, area
 
 
+def fillOutNumbers(peaks, rate):
+    """Fill in numbers between peaks.
+
+    Parameters
+    ----------
+    peaks : array_like
+        Peaks to fill between.
+    rate : float
+        Rate to use between peaks.
+
+    Examples
+    --------
+    >>> fillOutNumbers([0, 1, -1], rate=0.25)
+    array([ 0.  ,  0.25,  0.5 ,  0.75,  1.  ,  0.75,  0.5 ,  0.25,  0.  ,
+           -0.25, -0.5 , -0.75, -1.  ])
+    >>> fillOutNumbers([[0, 1, -1], [1, 2, -2]], rate=0.25)
+    array([[ 0.  ,  1.  , -1.  ],
+           [ 0.25,  1.25, -1.25],
+           [ 0.5 ,  1.5 , -1.5 ],
+           [ 0.75,  1.75, -1.75],
+           [ 1.  ,  2.  , -2.  ]])
+
+    Ported from the MATLAB function written by Mark Denavit.
+    """
+    peaks = np.array(peaks)
+
+    if len(peaks.shape) == 1:
+        peaks = peaks.reshape(peaks.size, 1)
+
+    if peaks.shape[0] == 1:
+        peaks = peaks.T
+
+    numpeaks = peaks.shape[0]
+    numbers = [peaks[0, :]]
+
+    for i in range(numpeaks - 1):
+        diff = peaks[i + 1, :] - peaks[i, :]
+        numsteps = int(np.maximum(2, 1 + np.ceil(np.max(np.abs(diff/rate)))))
+        numbers_to_add = superLinspace(peaks[i, :], peaks[i + 1, :], numsteps)
+        numbers.append(numbers_to_add[1:, :])
+
+    numbers = np.vstack(numbers)
+    if 1 in numbers.shape:
+        numbers = numbers.flatten()
+
+    return numbers
+
+
+def superLinspace(a, b, n):
+    """Create a 2-d array whose values are linearly spaced between two vectors.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        First vector.
+    b : np.ndarray
+        Last vector.
+    n : int
+        Number of rows to create.
+
+    Returns
+    -------
+    y : np.ndarray
+        2-d array whose first row is `a`, last row is `b`, and whose columns are
+        linspace-d vectors between the corresponding values of `a` and `b`.
+
+    Example
+    -------
+    >>> a = np.ndarray([1, 2, 3, 4, 5])
+    >>> b = np.ndarray([2, 3, 4, 5, 6])
+    >>> superLinspace(a, b, 5)
+    array([[1.  , 2.  , 3.  , 4.  , 5.  ],
+           [1.25, 2.25, 3.25, 4.25, 5.25],
+           [1.5 , 2.5 , 3.5 , 4.5 , 5.5 ],
+           [1.75, 2.75, 3.75, 4.75, 5.75],
+           [2.  , 3.  , 4.  , 5.  , 6.  ]])
+
+    Ported from the MATLAB function written by Mark Denavit.
+    """
+    if len(a.shape) != 1 or len(b.shape) != 1:
+        raise ValueError("superLinspace: a and b must be vectors")
+    if a.size != b.size:
+        raise ValueError("superLinspace: a and b must be the same length")
+
+    y = np.empty((n, a.size))
+    for i in range(a.size):
+        y[:, i] = np.linspace(a[i], b[i], n)
+
+    return y
+
+
 #===============================================================================
 # Fiber patches
 #===============================================================================
 def patchRect2d(matTag, nf, width, startHeight, endHeight):
     """Create a quadrilateral patch suitable for two-dimensional analyses.
-    
+
     All fibers are placed on the z-axis.
 
     Parameters

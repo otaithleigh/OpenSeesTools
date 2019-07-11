@@ -4,7 +4,7 @@ with open('README.rst') as file:
     long_description = file.read()
 
 setup(
-    name='openseespy-ext',
+    name='OpenSeesTools',
     version='0.0.0',
 
     description='Extensions to OpenSeesPy.',

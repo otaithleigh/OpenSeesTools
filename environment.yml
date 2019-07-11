@@ -1,4 +1,4 @@
-name: openseespy-ext
+name: opensees-tools
 channels:
   - defaults
   - conda-forge

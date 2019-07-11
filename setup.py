@@ -15,7 +15,11 @@ setup(
     packages=['OpenSeesTools'],
 
     python_requires='>=3.6',
-    install_requires=['openseespy', 'numpy'],
+    install_requires=[
+        'openseespy',
+        'numpy',
+        'tabulate',
+    ],
 
     author='Peter Talley, Mark D. Denavit',
     author_email='ptalley2@vols.utk.edu',

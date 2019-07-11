@@ -3,6 +3,7 @@ import json
 
 import numpy as np
 import openseespy.opensees as ops
+from tabulate import tabulate
 
 from .basic import OpenSeesAnalysis
 
@@ -10,8 +11,72 @@ __all__ = [
     'SectionAnalysis',
 ]
 
+Discretization = collections.namedtuple(
+    'Discretization', ['fiberMat', 'fiberLocY', 'fiberLocZ', 'fiberArea'])
+
+_tabulate_header_row_sep_loc = {
+    'fancy_grid': None,
+    'github': 1,
+    'grid': None,
+    'html': None,
+    'jira': None,
+    'latex': 3,
+    'latex_booktabs': 3,
+    'latex_raw': 3,
+    'mediawiki': None,
+    'moinmoin': None,
+    'orgtbl': 1,
+    'pipe': 1,
+    'plain': None,
+    'presto': 1,
+    'psql': 2,
+    'rst': None,
+    'simple': 1,
+    'textile': None,
+    'tsv': None,
+    'youtrack': None,
+}
+
+_tabulate_bottom_row_sep_loc = {
+    'fancy_grid': None,
+    'github': -1,
+    'grid': None,
+    'html': None,
+    'jira': None,
+    'latex': -3,
+    'latex_booktabs': -3,
+    'latex_raw': -3,
+    'mediawiki': None,
+    'moinmoin': None,
+    'orgtbl': -1,
+    'pipe': -1,
+    'plain': None,
+    'presto': -1,
+    'psql': -2,
+    'rst': None,
+    'simple': -1,
+    'textile': None,
+    'tsv': None,
+    'youtrack': None,
+}
+
 
 class SectionAnalysis(OpenSeesAnalysis):
+    """
+    Parameters
+    ----------
+    sectionFactory : function
+        Function that creates the section to be analyzed when called with no
+        arguments.
+    secTag : int, optional
+        Tag used by the section created by `sectionFactory`. (default: 1)
+    scratchPath : path_like, optional
+        Path to the scratch directory. If None, uses the system temporary
+        directory. (default: None)
+    analysisID : optional
+        Unique ID for the analysis. (default: 0)
+    """
+
     def __init__(self, sectionFactory, secTag=1, scratchPath=None,
                  analysisID=0):
         self.sectionFactory = sectionFactory
@@ -50,10 +115,6 @@ class SectionAnalysis(OpenSeesAnalysis):
             fiberLocZ[i] = fiber['coord'][1]
             fiberArea[i] = fiber['area']
 
-        Discretization = collections.namedtuple(
-            'Discretization',
-            ['fiberMat', 'fiberLocY', 'fiberLocZ', 'fiberArea'])
-
         if self.deleteFiles:
             file_print.unlink()
 
@@ -70,26 +131,42 @@ class SectionAnalysis(OpenSeesAnalysis):
 
         ax.scatter(fiberLocZ, fiberLocY, 20)
 
-    def printMaterialInfo(self, file=None):
-        fprint = lambda *args, **kwargs: print(*args, **kwargs, file=file)
+    def printMaterialInfo(self, tablefmt='presto', file=None):
+        """Print the material information for the section.
+
+        Parameters
+        ----------
+        file : optional
+            Open file-like descriptor to print to. (default: None)
+        """
         fiberMat, fiberLocY, fiberLocZ, fiberArea = self.getDiscretization()
 
-        fprint(
-            '  Material  |  # Fibers  |    Area    |     Iz     |     Iy     ')
-        fprint(
-            '------------+------------+------------+------------+------------')
+        headers = ['Material', '# Fibers', 'Area', 'Iz', 'Iy']
+        rows = []
+
         uniqueFiberMat = np.unique(fiberMat)
         for uMat in uniqueFiberMat:
             ind = np.array(np.nonzero(fiberMat == uMat))
             partSectionArea = np.sum(fiberArea[ind])
             partSectionIy = np.sum(fiberArea[ind]*fiberLocZ[ind]**2)
             partSectionIz = np.sum(fiberArea[ind]*fiberLocY[ind]**2)
-            fprint('{:-11d} |{:-11d} |{:-11.6g} |{:-11.6g} |{:-11.6g} '.format(
-                uMat, ind.size, partSectionArea, partSectionIz, partSectionIy))
-        fprint(
-            '------------+------------+------------+------------+------------')
+            rows.append(
+                [uMat, ind.size, partSectionArea, partSectionIz, partSectionIy])
+
         sectionArea = fiberArea.sum()
         sectionIy = np.sum(fiberArea*fiberLocZ**2)
         sectionIz = np.sum(fiberArea*fiberLocY**2)
-        fprint('    Total   |{:-11d} |{:-11.6g} |{:-11.6g} |{:-11.6g} '.format(
-            fiberArea.size, sectionArea, sectionIz, sectionIy))
+        rows.append(
+            ['Total', fiberArea.size, sectionArea, sectionIz, sectionIy])
+
+        table = tabulate(rows, headers, tablefmt=tablefmt, colalign=['right'])
+        # Hack in a bottom separator
+        header_sep_loc = _tabulate_header_row_sep_loc[tablefmt]
+        if header_sep_loc is not None:
+            bottom_sep_loc = _tabulate_bottom_row_sep_loc[tablefmt]
+            tablelines = table.splitlines()
+            table = '\n'.join([
+                *tablelines[:bottom_sep_loc], tablelines[header_sep_loc],
+                *tablelines[bottom_sep_loc:]
+            ])
+        print(table, file=file)

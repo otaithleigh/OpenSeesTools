@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python
   - numpy
+  - tabulate
   - pip
   - pip:
     - openseespy
@@ -16,5 +17,6 @@ dependencies:
   - pytest
   - invoke
   - sphinx
+  - sphinx_rtd_theme
   - docutils
   - doc8

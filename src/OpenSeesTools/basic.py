@@ -20,18 +20,19 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-def getClassLogger(name):
+def getClassLogger(cls):
     """Get a logger scoped to the requested class.
 
     Parameters
     ----------
-    name : str
-        Name of the class to get a logger for.
+    cls : type
+        Class to get a logger for.
 
     Example
     -------
     >>> class ClassWithLogger():
-    ...     logger = getClassLogger('ClassWithLogger')
+    ...     def __init__(self):
+    ...         self.logger = getClassLogger(self.__class__)
     ...     def some_func(self, msg):
     ...         self.logger.warning(msg)
     ...
@@ -40,7 +41,7 @@ def getClassLogger(name):
     >>> instance.some_func('this is a warning')
     __main__.ClassWithLogger.some_func: this is a warning
     """
-    return logging.getLogger(__name__ + '.' + name)
+    return logging.getLogger(cls.__module__ + '.' + cls.__name__)
 
 
 #===============================================================================

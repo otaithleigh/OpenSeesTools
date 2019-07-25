@@ -3,7 +3,11 @@ import pathlib
 import tempfile
 
 import numpy as np
-import openseespy.opensees as ops
+# Prefer locally-built openseespy to pip-installed openseespy
+try:
+    import opensees as ops
+except ImportError:
+    import openseespy.opensees as ops
 
 #===============================================================================
 # Globals

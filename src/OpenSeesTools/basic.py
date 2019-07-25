@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 #===============================================================================
 # Utilities
 #===============================================================================
-def getClassLogger(cls):
+def getClassLogger(cls) -> logging.Logger:
     """Get a logger scoped to the requested class.
 
     Parameters

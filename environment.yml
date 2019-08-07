@@ -1,9 +1,10 @@
-name: opensees-tools
+name: OpenSeesTools
 channels:
   - defaults
   - conda-forge
 dependencies:
-  - python
+  - python=3.6
+  - matplotlib
   - numpy
   - tabulate
   - pip

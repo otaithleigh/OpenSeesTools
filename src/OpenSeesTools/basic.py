@@ -1,3 +1,6 @@
+import contextlib
+import functools
+import io
 import logging
 import pathlib
 import tempfile
@@ -14,6 +17,7 @@ except ImportError:
 #===============================================================================
 __all__ = [
     'areaCircularSector',
+    'captureOutput',
     'centroidCircularSector',
     'fourFiberSectionGJ',
     'getClassLogger',
@@ -212,6 +216,95 @@ def fillOutNumbers(peaks, rate):
         numbers = numbers.flatten()
 
     return numbers
+
+
+#===============================================================================
+# Output handling
+#===============================================================================
+def captureOutput(func=None, *, stream='stdout', postProcess=None):
+    """Decorator to wrap a function, capturing everything sent to `stream`.
+
+    The function's signature will change from::
+
+        func(*args, **kwargs) -> return_values
+
+    to::
+
+        func(*args, **kwargs) -> (return_values, stream_output)
+
+    If the function doesn't normally return anything, `return_values` will be
+    None.
+
+    .. note::
+
+        Functions that do not print to Python's standard output or standard
+        error will not be successfully wrapped by this decorator. For example,
+        a C++ library that prints directly to ``std::cerr`` will not be
+        captured, as ``std::cerr`` bypasses Python's ``sys.stdout`` and
+        ``sys.stderr``.
+
+    Parameters
+    ----------
+    func
+        Function to wrap.
+
+    Keyword Parameters
+    ------------------
+    stream : {'stdout', 'stderr'}, optional
+        Stream to capture. (default: 'stdout')
+    postProcess : optional
+        Function called on the captured output. Should take a single str
+        parameter that contains the entire output and return the modified
+        output. (default: None)
+
+    Examples
+    --------
+    >>> @captureOutput
+    ... def sayHello():
+    ...     print('hello!')
+    ...
+    >>> sayHello()
+    (None, 'hello!\\n')
+    >>> @captureOutput(stream='stderr')
+    ... def sayWhoops():
+    ...     print('whoops!', file=sys.stderr)
+    ...     return 0
+    >>> sayWhoops()
+    (0, 'whoops!\\n')
+    >>> @captureOutput
+    ... def sayManyThings(*things):
+    ...     print(*things)
+    ...     return things
+    ...
+    >>> sayManyThings('hello', 'there!')
+    (('hello', 'there!'), 'hello there!\\n')
+    """
+    redirect_dispatch = {
+        'stdout': contextlib.redirect_stdout,
+        'stderr': contextlib.redirect_stderr
+    }
+    redirect = redirect_dispatch[stream]
+
+    def captureOutputWithPostProcessing(func):
+        @functools.wraps(func)
+        def captureOutputWrapper(*args, **kwargs):
+            f = io.StringIO()
+            with redirect(f):
+                funcreturn = func(*args, **kwargs)
+
+            output = f.getvalue()
+            if postProcess is not None:
+                output = postProcess(output)
+
+            return funcreturn, output
+
+        return captureOutputWrapper
+
+    # Allow decorating without calling
+    if func is None:
+        return captureOutputWithPostProcessing
+    else:
+        return captureOutputWithPostProcessing(func)
 
 
 #===============================================================================

@@ -19,6 +19,7 @@ __all__ = [
     'areaCircularSector',
     'captureOutput',
     'centroidCircularSector',
+    'fillOutNumbers',
     'fourFiberSectionGJ',
     'getClassLogger',
     'linspaceCoords2d',

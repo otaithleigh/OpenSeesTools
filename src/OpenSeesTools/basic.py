@@ -21,6 +21,7 @@ __all__ = [
     'centroidCircularSector',
     'fourFiberSectionGJ',
     'getClassLogger',
+    'linspaceCoords2d',
     'nShapesCentroid',
     'patchRect2d',
     'patchHalfCircTube2d',
@@ -216,6 +217,69 @@ def fillOutNumbers(peaks, rate):
         numbers = numbers.flatten()
 
     return numbers
+
+
+def linspaceCoords2d(xi,
+                     yi,
+                     xj,
+                     yj,
+                     numElements,
+                     iOffset=0.0,
+                     jOffset=0.0,
+                     offsetFactor=False,
+                     imperf=0.0):
+    """Generate evenly-spaced coordinates for a 2D member, with optional rigid
+    offset and sinusoidal imperfection calculation.
+
+    Parameters
+    ----------
+    xi
+        x-coordinate of the i workpoint.
+    yi
+        y-coordinate of the i workpoint.
+    xj
+        x-coordinate of the j workpoint.
+    yj
+        y-coordinate of the j workpoint.
+    numElements
+        Number of elements.
+    iOffset : float, optional
+        Distance from the i workpoint to the first coordinate. (default: 0.0)
+    jOffset : float, optional
+        Distance from the j workpoint to the last coordinate. (default: 0.0)
+    offsetFactor : bool, optional
+        If True, `iOffset` and `jOffset` specify offsets as a factor of the
+        workpoint-to-workpoint length instead of absolute lengths. (default:
+        False)
+    imperf : float, optional
+        Sinusoidal imperfection as a factor of the i-node to j-node length.
+        Positive is in the counter-clockwise direction from the vector pointing
+        from (`xi`, `yi`) to (`xj`, `yj`). (default: 0.0)
+
+    Returns
+    -------
+    coords : np.ndarray
+        2-d array with x-coordinates in the first row and y-coordinates in the
+        second row. Can be unpacked as ``x, y = linspaceCoords2d(*args)``.
+    """
+    # Plop out x- and y-coordinates on a line, and then rotate/translate into place.
+    L = ((xj - xi)**2 + (yj - yi)**2)**0.5
+    if offsetFactor:
+        iOffset = iOffset*L
+        jOffset = jOffset*L
+    L -= iOffset + jOffset
+    xCoords = iOffset + np.linspace(0, L, numElements + 1)
+    yCoords = imperf*L*np.sin(np.pi*(xCoords - iOffset)/L)
+
+    alpha = np.arctan2(yj - yi, xj - xi)
+    R = np.array([[np.cos(alpha), -np.sin(alpha)],
+                  [np.sin(alpha), +np.cos(alpha)]])
+
+    coords = R @ np.vstack((xCoords, yCoords))
+    coords[0, :] += xi
+    coords[1, :] += yi
+
+    return coords
 
 
 #===============================================================================

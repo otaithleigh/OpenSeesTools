@@ -17,7 +17,7 @@ ksi = kip/inch**2
 psi = lbf/inch**2
 
 #-------------------------------------------------------------------------------
-# Section definition
+# Section definition (W14x159)
 #-------------------------------------------------------------------------------
 d = 15.0*inch
 tw = 0.745*inch
@@ -31,11 +31,13 @@ Fy = 50.0*ksi
 E = 29000.0*ksi
 Eh = E/1000
 H = E*Eh/(E - Eh)
+G = 11200*ksi
+J = 19.7*inch**4
 
 
 def createSection():
     ops.uniaxialMaterial('Hardening', 1, E, Fy, H, 0.0)
-    ops.section('Fiber', 1)
+    ops.section('Fiber', 1, '-GJ', G*J)
     # Flanges
     nX = nfx
     nY = int(np.ceil(nfy*tf/d))

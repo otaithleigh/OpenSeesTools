@@ -15,7 +15,7 @@ Installation
 
 .. code::
 
-    pip install -e "https://github.com/otaithleigh/OpenSees-Tools"
+    pip install -e "git+https://github.com/otaithleigh/OpenSeesTools"
 
 
 Acknowledgments

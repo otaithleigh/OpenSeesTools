@@ -28,6 +28,7 @@ __all__ = [
     'patchHalfCircTube2d',
     'scratchFileFactory',
     'twoFiberSection',
+    'updateRayleighDamping',
 ]
 
 logger = logging.getLogger(__name__)
@@ -109,6 +110,37 @@ class OpenSeesAnalysis():
         self.scratchFile = scratchFileFactory(self.__class__.__name__,
                                               scratchPath, analysisID)
         self.deleteFiles = True
+
+
+def updateRayleighDamping(modeA, ratioA, modeB, ratioB,
+                          solver='-genBandArpack'):
+    """Run an eigenvalue analysis and set proportional damping baed on the
+    current state of the structure.
+    
+    Parameters
+    ----------
+    modeA : int
+        First specified mode with prescribed damping.
+    ratioA : float
+        Damping ratio prescribed for mode A.
+    modeB : int
+        Second specified mode with prescribed damping.
+    ratioB : float
+        Damping ratio prescribed for mode B.
+    solver : {'-genBandArpack', '-symmBandLapack', '-fullGenLapack'}, optional
+        Solver to use for the eigenvalue analysis. (default: '-genBandArpack')
+    """
+    # Get natural frequencies at the desired modes
+    maxMode = modeA if modeA > modeB else modeB
+    eigenvalues = ops.eigen(solver, maxMode)
+    frequencyA = np.sqrt(eigenvalues[modeA - 1])
+    frequencyB = np.sqrt(eigenvalues[modeB - 1])
+
+    # Compute the damping factors
+    k = 2.0/(frequencyA**2 - frequencyB**2)
+    aM = k*frequencyA*frequencyB*(ratioB*frequencyA - ratioA*frequencyB)
+    aK = k*(ratioA*frequencyA - ratioB*frequencyB)
+    ops.rayleigh(aM, 0.0, 0.0, aK)
 
 
 #===============================================================================

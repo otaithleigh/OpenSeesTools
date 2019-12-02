@@ -5,9 +5,6 @@ import logging
 import pathlib
 import tempfile
 
-# matplotlib needs to be imported before pip-installed openseespy, since
-# openseespy ships with its own C++ standard library which is ABI-incompatible.
-import matplotlib.pyplot as plt
 import numpy as np
 # Prefer locally-built openseespy to pip-installed openseespy
 try:

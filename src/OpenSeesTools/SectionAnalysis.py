@@ -4,6 +4,7 @@ import json
 import attr
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from tabulate import tabulate
 
 from .basic import ops, OpenSeesAnalysis, nShapesCentroid
@@ -60,6 +61,34 @@ class SectionDiscretization():
     def getIy(self):
         """Return the total moment of inertia about the Y-axis."""
         return np.sum(self.fiberArea*self._centeredZ**2)
+
+    def getPerMaterialData(self, center=True):
+        materialTags = np.unique(self.fiberMat)
+        numFibers = []
+        partialArea = []
+        partialIz = []
+        partialIy = []
+        for tag in materialTags:
+            indices = np.array(np.nonzero(self.fiberMat == tag))
+            numFibers.append(indices.size)
+            fiberArea = self.fiberArea[indices]
+            if center:
+                fiberLocZ = self._centeredZ[indices]
+                fiberLocY = self._centeredY[indices]
+            else:
+                fiberLocZ = self.fiberLocZ[indices]
+                fiberLocY = self.fiberLocY[indices]
+            partialArea.append(np.sum(fiberArea))
+            partialIz.append(np.sum(fiberArea*fiberLocY**2))
+            partialIy.append(np.sum(fiberArea*fiberLocZ**2))
+
+        return pd.DataFrame({
+            'MaterialTag': materialTags,
+            'NumFibers': numFibers,
+            'Area': partialArea,
+            'Iz': partialIz,
+            'Iy': partialIy,
+        }).set_index('MaterialTag')
 
 
 # Index of the header row separator for different tabulate formats.
@@ -262,21 +291,14 @@ class SectionAnalysis(OpenSeesAnalysis):
         disc = self.getDiscretization()
 
         headers = ['Material', '# Fibers', 'Area', 'Iz', 'Iy']
-        rows = []
 
-        uniqueFiberMat = np.unique(disc.fiberMat)
-        for uMat in uniqueFiberMat:
-            ind = np.array(np.nonzero(disc.fiberMat == uMat))
-            partArea = np.sum(disc.fiberArea[ind])
-            partIy = np.sum(disc.fiberArea[ind]*disc.fiberLocZ[ind]**2)
-            partIz = np.sum(disc.fiberArea[ind]*disc.fiberLocY[ind]**2)
-            rows.append([uMat, ind.size, partArea, partIz, partIy])
-
+        perMaterialData = disc.getPerMaterialData()
+        numFibers = perMaterialData.NumFibers.sum()
         sectionArea = disc.getArea()
         sectionIy = disc.getIy()
         sectionIz = disc.getIz()
-        rows.append(
-            ['Total', disc.fiberArea.size, sectionArea, sectionIz, sectionIy])
+        rows = [*perMaterialData.itertuples()]
+        rows.append(['Total', numFibers, sectionArea, sectionIz, sectionIy])
 
         table = tabulate(rows, headers, tablefmt, floatfmt, colalign=['right'])
         # Hack in a bottom separator

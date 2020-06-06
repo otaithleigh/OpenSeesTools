@@ -14,10 +14,11 @@ setup(
     package_dir={'': 'src'},
     packages=['OpenSeesTools'],
 
-    python_requires='>=3.6',
+    python_requires='>=3.6.1',
     install_requires=[
         'openseespy',
         'numpy',
+        'pandas>=1.0',
         'tabulate',
     ],
 

@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import openseespy.opensees as ops
 
 from OpenSeesTools import SectionAnalysis
+from OpenSeesTools.basic import ops
 
 #-------------------------------------------------------------------------------
 # Units

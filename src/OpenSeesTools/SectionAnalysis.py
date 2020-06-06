@@ -4,16 +4,17 @@ import json
 import attr
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from tabulate import tabulate
 
-from .basic import ops, OpenSeesAnalysis
+from .basic import ops, OpenSeesAnalysis, nShapesCentroid
 
 __all__ = [
     'SectionAnalysis',
 ]
 
 
-@attr.s(auto_attribs=True, slots=True)
+@attr.s(auto_attribs=True, slots=True, repr=False)
 class SectionDiscretization():
     """Section discretized into constituent fibers.
 
@@ -35,18 +36,59 @@ class SectionDiscretization():
     fiberLocY: np.ndarray
     fiberLocZ: np.ndarray
     fiberArea: np.ndarray
+    _centeredY: np.ndarray = attr.ib(init=False)
+    _centeredZ: np.ndarray = attr.ib(init=False)
+    _totalArea: float = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        # Adjust the fiber locations so that the centroid is at (0, 0). This is
+        # what OpenSees does internally, so we need to replicate this behavior
+        # in order to return accurate Iz and Iy values.
+        (ybar, zbar, area) = nShapesCentroid(self.fiberLocY, self.fiberLocZ,
+                                             self.fiberArea)
+        self._centeredY = self.fiberLocY + ybar
+        self._centeredZ = self.fiberLocZ + zbar
+        self._totalArea = area
 
     def getArea(self):
         """Return the total area of the section."""
-        return self.fiberArea.sum()
+        return self._totalArea
 
     def getIz(self):
         """Return the total moment of inertia about the Z-axis."""
-        return np.sum(self.fiberArea*self.fiberLocY**2)
+        return np.sum(self.fiberArea*self._centeredY**2)
 
     def getIy(self):
         """Return the total moment of inertia about the Y-axis."""
-        return np.sum(self.fiberArea*self.fiberLocZ**2)
+        return np.sum(self.fiberArea*self._centeredZ**2)
+
+    def getPerMaterialData(self, center=True):
+        materialTags = np.unique(self.fiberMat)
+        numFibers = []
+        partialArea = []
+        partialIz = []
+        partialIy = []
+        for tag in materialTags:
+            indices = np.array(np.nonzero(self.fiberMat == tag))
+            numFibers.append(indices.size)
+            fiberArea = self.fiberArea[indices]
+            if center:
+                fiberLocZ = self._centeredZ[indices]
+                fiberLocY = self._centeredY[indices]
+            else:
+                fiberLocZ = self.fiberLocZ[indices]
+                fiberLocY = self.fiberLocY[indices]
+            partialArea.append(np.sum(fiberArea))
+            partialIz.append(np.sum(fiberArea*fiberLocY**2))
+            partialIy.append(np.sum(fiberArea*fiberLocZ**2))
+
+        return pd.DataFrame({
+            'MaterialTag': materialTags,
+            'NumFibers': numFibers,
+            'Area': partialArea,
+            'Iz': partialIz,
+            'Iy': partialIy,
+        }).set_index('MaterialTag')
 
 
 # Index of the header row separator for different tabulate formats.
@@ -249,21 +291,14 @@ class SectionAnalysis(OpenSeesAnalysis):
         disc = self.getDiscretization()
 
         headers = ['Material', '# Fibers', 'Area', 'Iz', 'Iy']
-        rows = []
 
-        uniqueFiberMat = np.unique(disc.fiberMat)
-        for uMat in uniqueFiberMat:
-            ind = np.array(np.nonzero(disc.fiberMat == uMat))
-            partArea = np.sum(disc.fiberArea[ind])
-            partIy = np.sum(disc.fiberArea[ind]*disc.fiberLocZ[ind]**2)
-            partIz = np.sum(disc.fiberArea[ind]*disc.fiberLocY[ind]**2)
-            rows.append([uMat, ind.size, partArea, partIz, partIy])
-
+        perMaterialData = disc.getPerMaterialData()
+        numFibers = perMaterialData.NumFibers.sum()
         sectionArea = disc.getArea()
         sectionIy = disc.getIy()
         sectionIz = disc.getIz()
-        rows.append(
-            ['Total', disc.fiberArea.size, sectionArea, sectionIz, sectionIy])
+        rows = [*perMaterialData.itertuples()]
+        rows.append(['Total', numFibers, sectionArea, sectionIz, sectionIy])
 
         table = tabulate(rows, headers, tablefmt, floatfmt, colalign=['right'])
         # Hack in a bottom separator

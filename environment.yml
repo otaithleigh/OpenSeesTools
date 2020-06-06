@@ -6,6 +6,7 @@ dependencies:
   - python=3.6
   - matplotlib
   - numpy
+  - pandas>=1.0
   - tabulate
   - pip
   - pip:

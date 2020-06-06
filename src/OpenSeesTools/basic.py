@@ -190,9 +190,9 @@ def nShapesCentroid(x, y, A):
     ValueError
         if `x`, `y`, and `A` are not the same size.
     """
-    x = np.array(x).flatten()
-    y = np.array(y).flatten()
-    A = np.array(A).flatten()
+    x = np.asanyarray(x).reshape(-1)
+    y = np.asanyarray(y).reshape(-1)
+    A = np.asanyarray(A).reshape(-1)
     if x.size != y.size or x.size != A.size:
         raise ValueError('nShapesCentroid: x, y, A must be the same size')
 

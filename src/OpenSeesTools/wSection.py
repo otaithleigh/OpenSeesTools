@@ -436,7 +436,13 @@ class WSection2d(AbstractWSection):
 
     def createFibersWithResidualStress(self):
         frc = self._residualStress.frc
-        frt = -frc*(self.bf*self.tf)/(self.bf*self.tf + self.tw*self.dw)
+        if self.k > self.tf:
+            r = self.k - self.tf
+            fillet_area = (1 - 0.25*np.pi)*r**2
+            frt = -frc*(self.bf*self.tf)/(self.bf*self.tf + self.tw*self.dw +
+                                          4*fillet_area)
+        else:
+            frt = -frc*(self.bf*self.tf)/(self.bf*self.tf + self.tw*self.dw)
         nSectors = self._residualStress.nSectors
 
         # Create residual stress materials
@@ -556,7 +562,7 @@ class WSection3d(AbstractWSection):
         else:
             matTag = self._material.tag
             nff1 = np.ceil((self.nf1/self.d)*self.tf)
-            nfw1 = np.ceil((self.nf1/self.d)*(self.d - 2*self.tf)) 
+            nfw1 = np.ceil((self.nf1/self.d)*(self.d - 2*self.tf))
             nff2 = np.ceil((self.nf2/self.bf)*self.bf)
             ops.patch('quad', matTag, )
             lastTag = matTag

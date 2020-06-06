@@ -6,14 +6,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tabulate import tabulate
 
-from .basic import ops, OpenSeesAnalysis
+from .basic import ops, OpenSeesAnalysis, nShapesCentroid
 
 __all__ = [
     'SectionAnalysis',
 ]
 
 
-@attr.s(auto_attribs=True, slots=True)
+@attr.s(auto_attribs=True, slots=True, repr=False)
 class SectionDiscretization():
     """Section discretized into constituent fibers.
 
@@ -35,18 +35,31 @@ class SectionDiscretization():
     fiberLocY: np.ndarray
     fiberLocZ: np.ndarray
     fiberArea: np.ndarray
+    _centeredY: np.ndarray = attr.ib(init=False)
+    _centeredZ: np.ndarray = attr.ib(init=False)
+    _totalArea: float = attr.ib(init=False)
+
+    def __attrs_post_init__(self):
+        # Adjust the fiber locations so that the centroid is at (0, 0). This is
+        # what OpenSees does internally, so we need to replicate this behavior
+        # in order to return accurate Iz and Iy values.
+        (ybar, zbar, area) = nShapesCentroid(self.fiberLocY, self.fiberLocZ,
+                                             self.fiberArea)
+        self._centeredY = self.fiberLocY + ybar
+        self._centeredZ = self.fiberLocZ + zbar
+        self._totalArea = area
 
     def getArea(self):
         """Return the total area of the section."""
-        return self.fiberArea.sum()
+        return self._totalArea
 
     def getIz(self):
         """Return the total moment of inertia about the Z-axis."""
-        return np.sum(self.fiberArea*self.fiberLocY**2)
+        return np.sum(self.fiberArea*self._centeredY**2)
 
     def getIy(self):
         """Return the total moment of inertia about the Y-axis."""
-        return np.sum(self.fiberArea*self.fiberLocZ**2)
+        return np.sum(self.fiberArea*self._centeredZ**2)
 
 
 # Index of the header row separator for different tabulate formats.

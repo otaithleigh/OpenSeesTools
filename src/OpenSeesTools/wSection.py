@@ -8,6 +8,7 @@ to finish setup::
 >>> section.setMaterial('Elastic', 1, 29000.0)
 <WSection2d(secTag=1, nf=20, axis='strong', d=13.9, tw=0.37, bf=8.06, tf=0.66, k=0.66) [Material: Elastic(tag=1, Es=29000.0)] [Residual stress: None] [Additional stiffness: None]>
 """
+from __future__ import annotations
 
 import abc
 

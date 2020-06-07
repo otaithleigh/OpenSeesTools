@@ -118,7 +118,7 @@ def updateRayleighDamping(modeA, ratioA, modeB, ratioB,
                           solver='-genBandArpack'):
     """Run an eigenvalue analysis and set proportional damping based on the
     current state of the structure.
-    
+
     Parameters
     ----------
     modeA : int

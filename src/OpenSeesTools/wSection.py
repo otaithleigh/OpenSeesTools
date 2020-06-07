@@ -295,7 +295,7 @@ class AbstractWSection(abc.ABC):
 
     def setGJ(self, GJ):
         """Set the torsional stiffness of the section instead of calculating it.
-        
+
         Parameters
         ----------
         GJ : float
@@ -370,7 +370,7 @@ class WSection2d(AbstractWSection):
     @classmethod
     def fromName(cls, name, secTag, nf, axis, units='US'):
         """Look up shape data to create the section.
-        
+
         Parameters
         ----------
         name : str

@@ -14,7 +14,7 @@ setup(
     package_dir={'': 'src'},
     packages=['OpenSeesTools'],
 
-    python_requires='>=3.6.1',
+    python_requires='>=3.7',
     install_requires=[
         'openseespy',
         'numpy',

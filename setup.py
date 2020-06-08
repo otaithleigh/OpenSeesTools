@@ -5,7 +5,7 @@ with open('README.rst') as file:
 
 setup(
     name='OpenSeesTools',
-    version='0.0.0',
+    version='0.1.0',
 
     description='Extensions to OpenSeesPy.',
     long_description=long_description,

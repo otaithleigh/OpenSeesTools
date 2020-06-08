@@ -4,7 +4,8 @@ import typing
 
 import attr
 
-from .basic import ops, getClassLogger
+from . import opensees as ops
+from .basic import getClassLogger
 
 __all__ = [
     'VariableAnalysis',

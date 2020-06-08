@@ -15,7 +15,8 @@ import abc
 import attr
 import numpy as np
 
-from .basic import ops, patchRect2d, twoFiberSection, fourFiberSectionGJ
+from . import opensees as ops
+from .basic import patchRect2d, twoFiberSection, fourFiberSectionGJ
 
 #===============================================================================
 # Globals

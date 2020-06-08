@@ -9,7 +9,8 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from .basic import ops, OpenSeesAnalysis, nShapesCentroid
+from . import opensees as ops
+from .basic import OpenSeesAnalysis, nShapesCentroid
 
 __all__ = [
     'SectionAnalysis',

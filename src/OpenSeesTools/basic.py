@@ -8,11 +8,8 @@ import pathlib
 import tempfile
 
 import numpy as np
-# Prefer locally-built openseespy to pip-installed openseespy
-try:
-    import opensees as ops
-except ImportError:
-    import openseespy.opensees as ops
+
+from . import opensees as ops
 
 #===============================================================================
 # Globals

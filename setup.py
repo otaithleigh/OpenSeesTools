@@ -16,6 +16,7 @@ setup(
 
     python_requires='>=3.7',
     install_requires=[
+        'attrs',
         'openseespy',
         'numpy',
         'pandas>=1.0',

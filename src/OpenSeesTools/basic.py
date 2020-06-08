@@ -25,6 +25,7 @@ __all__ = [
     'fourFiberSectionGJ',
     'getClassLogger',
     'linspaceCoords2d',
+    'linspaceCoords3d',
     'nShapesCentroid',
     'patchRect2d',
     'patchHalfCircTube2d',
@@ -314,6 +315,118 @@ def linspaceCoords2d(xi,
     coords[0, :] += xi
     coords[1, :] += yi
 
+    return coords
+
+
+def linspaceCoords3d(xi: float,
+                     yi: float,
+                     zi: float,
+                     xj: float,
+                     yj: float,
+                     zj: float,
+                     numElements: int,
+                     iOffset: float = 0.0,
+                     jOffset: float = 0.0,
+                     offsetIsFactor: bool = False,
+                     imperf: float = 0.0,
+                     imperfAngle: float = 0.0,
+                     imperfPlane: np.ndarray = None):
+    """Generate evenly-spaced coordinates for a 3D member, with optional rigid
+    offset and sinusoidal imperfection calculation.
+
+    Parameters
+    ----------
+    xi, yi, zi : float
+        Coordinates of the i workpoint.
+
+    xj, yj, zj : float
+        Coordinates of the j workpoint.
+
+    numElements : int
+        Number of elements the member will consist of. numElements + 1 points
+        are generated.
+
+    iOffset : float, optional
+        Distance from the i workpoint to the first coordinate. (default: 0.0)
+
+    jOffset : float, optional
+        Distance from the j workpoint to the last coordinate. (default: 0.0)
+
+    offsetIsFactor : bool, optional
+        If True, `iOffset` and `jOffset` specify offsets as a factor of the
+        workpoint-to-workpoint length instead of absolute lengths. (default:
+        False)
+
+    imperf : float, optional
+        Sinusoidal imperfection as a factor of the i-node to j-node length.
+        (default: 0.0)
+
+    imperfAngle : float, optional
+        Angle of the imperfection from the xz plane defined by `imperfPlane`.
+        (default: 0.0)
+
+    imperfPlane : array_like, optional
+        Vector that, along with the vector defined by the workpoint coordinates,
+        defines the xz plane for the imperfection. This is usually the same
+        vector that the OpenSees `geomTransf` command requires. If None, no
+        imperfection is added to the returned coordinates. (default: None)
+
+    Returns
+    -------
+    coords : np.ndarray
+        2-d array with x-coordinates in the first row, y-coordinates in the
+        second row, and z-coordinates in the third row. Can be unpacked as
+        ``x, y, z = linspaceCoords3d(*args)``.
+    """
+    # Move origin to the i workpoint
+    x = xj - xi
+    y = yj - yi
+    z = zj - zi
+
+    # Calculate length and adjust for offsets
+    L = np.sqrt(x**2 + y**2 + z**2)
+    if offsetIsFactor:
+        iOffset *= L
+        jOffset *= L
+    L = L - iOffset - jOffset
+
+    # Location of points along the local x-axis
+    xCoords = iOffset + np.linspace(0, L, numElements + 1)
+
+    if imperfPlane is not None:
+        # Calculate the imperfection in polar coordinates about the local x-axis
+        imperf_r = imperf*L*np.sin(np.pi*(xCoords - iOffset)/L)
+        zCoords = imperf_r*np.cos(imperfAngle)
+        yCoords = imperf_r*np.sin(imperfAngle)
+
+        # Calculate the local Cartesian system
+        local_x = np.array([x, y, z])
+        local_y = np.cross(imperfPlane, local_x)
+        local_z = np.cross(local_x, local_y)
+
+        # Unit vectors
+        local_x = local_x/np.linalg.norm(local_x)
+        local_y = local_y/np.linalg.norm(local_y)
+        local_z = local_z/np.linalg.norm(local_z)
+
+        # Rotate to global coordinates and translate back to original
+        R = np.vstack((local_x, local_y, local_z)).T
+        coords = R @ np.vstack((xCoords, yCoords, zCoords))
+    else:
+        # Without imperfection, things are simpler. Treat the local x-coords as
+        # r in a spherical coordinate system, and back out cartesian coordinates
+        # from there.
+        rCoords = xCoords
+        φ = np.arctan2(y, x)
+        θ = np.arctan2(np.sqrt(x**2 + y**2), z)
+
+        xCoords = rCoords*np.sin(θ)*np.cos(φ)
+        yCoords = rCoords*np.sin(θ)*np.sin(φ)
+        zCoords = rCoords*np.cos(θ)
+        coords = np.vstack((xCoords, yCoords, zCoords))
+
+    # Move origin back
+    coords += np.array([xi, yi, zi]).reshape(-1, 1)
     return coords
 
 

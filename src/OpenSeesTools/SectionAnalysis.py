@@ -49,8 +49,8 @@ class SectionDiscretization():
         # in order to return accurate Iz and Iy values.
         (ybar, zbar, area) = nShapesCentroid(self.fiberLocY, self.fiberLocZ,
                                              self.fiberArea)
-        self._centeredY = self.fiberLocY + ybar
-        self._centeredZ = self.fiberLocZ + zbar
+        self._centeredY = self.fiberLocY - ybar
+        self._centeredZ = self.fiberLocZ - zbar
         self._totalArea = area
 
     def getArea(self):

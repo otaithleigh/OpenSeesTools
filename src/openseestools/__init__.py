@@ -5,7 +5,9 @@ except ImportError:
     try:
         from openseespy import opensees
     except ImportError:
-        raise RuntimeError('OpenSeesPy not found on this system.')
+        import warnings
+        warnings.warn('OpenSeesPy not found on this system.')
+        opensees = None
 
 from .basic import *
 from .sectionanalysis import *

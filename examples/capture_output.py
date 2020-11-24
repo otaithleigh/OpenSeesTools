@@ -1,5 +1,4 @@
 import logging
-import sys
 
 from openseestools import opensees as ops
 from openseestools import captureOutput

@@ -2,7 +2,10 @@
 try:
     import opensees
 except ImportError:
-    from openseespy import opensees
+    try:
+        from openseespy import opensees
+    except ImportError:
+        raise RuntimeError('OpenSeesPy not found on this system.')
 
 from .basic import *
 from .SectionAnalysis import *

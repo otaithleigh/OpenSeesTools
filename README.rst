@@ -13,9 +13,16 @@ Requirements
 Installation
 ============
 
-.. code::
+Pip::
 
-    pip install -e "git+https://github.com/otaithleigh/OpenSeesTools"
+    pip install openseestools
+
+Conda::
+
+    conda install -c otaithleigh openseestools
+
+
+Usage of most functionality requires a working installation of OpenSeesPy.
 
 
 Acknowledgments

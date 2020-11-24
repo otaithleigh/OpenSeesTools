@@ -8,6 +8,6 @@ except ImportError:
         raise RuntimeError('OpenSeesPy not found on this system.')
 
 from .basic import *
-from .SectionAnalysis import *
-from .VariableAnalysis import *
-from .wSection import *
+from .sectionanalysis import *
+from .variableanalysis import *
+from .wsection import *

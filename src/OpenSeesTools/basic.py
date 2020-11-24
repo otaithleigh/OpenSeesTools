@@ -228,7 +228,7 @@ def fillOutNumbers(peaks, rate):
 
     Ported from the MATLAB function written by Mark Denavit.
     """
-    peaks = np.array(peaks)
+    peaks = np.asanyarray(peaks)
 
     if len(peaks.shape) == 1:
         peaks = peaks.reshape(peaks.size, 1)

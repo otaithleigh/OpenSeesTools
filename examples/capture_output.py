@@ -1,8 +1,8 @@
 import logging
 import sys
 
-from OpenSeesTools import opensees as ops
-from OpenSeesTools import captureOutput
+from openseestools import opensees as ops
+from openseestools import captureOutput
 
 logging.basicConfig(format='%(levelname)s:%(name)s.%(funcName)s: %(message)s',
                     level='DEBUG')

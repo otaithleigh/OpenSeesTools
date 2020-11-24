@@ -1,6 +1,6 @@
 import numpy as np
 
-from OpenSeesTools.basic import linspaceCoords3d
+from openseestools.basic import linspaceCoords3d
 
 tol = {
     'rtol': 1e-8,

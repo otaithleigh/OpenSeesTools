@@ -5,7 +5,7 @@ The |SectionAnalysis| class provides methods for inspecting OpenSees fiber
 sections.
 
 
-.. autoclass:: OpenSeesTools.SectionAnalysis
+.. autoclass:: openseestools.SectionAnalysis
     :members:
 
 
@@ -14,7 +14,7 @@ Example
 
 .. code-block::
 
-    >>> from OpenSeesTools import SectionAnalysis, fourFiberSectionGJ
+    >>> from openseestools import SectionAnalysis, fourFiberSectionGJ
     >>> def createSection():
     ...     ops.uniaxialMaterial('Elastic', 1, 29000.0)
     ...     fourFiberSectionGJ(1, 1, area=10.0, Iy=144.0, Iz=94.0, GJ=11000.0)
@@ -27,4 +27,4 @@ Example
           Total |          4 |     10 | 93.9999 |  144
 
 
-.. |SectionAnalysis| replace:: :class:`OpenSeesTools.SectionAnalysis`
+.. |SectionAnalysis| replace:: :class:`openseestools.SectionAnalysis`

@@ -1,4 +1,4 @@
-name: OpenSeesTools
+name: openseestools
 channels:
   - defaults
   - conda-forge

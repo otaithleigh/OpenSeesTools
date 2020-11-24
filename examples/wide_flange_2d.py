@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from tabulate import tabulate
 
-from OpenSeesTools import WSection2d, SectionAnalysis
+from openseestools import WSection2d, SectionAnalysis
 
 sections = {
     'W14x53': {

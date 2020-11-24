@@ -495,7 +495,7 @@ def captureOutput(func):
 
     Captured output persists even if an error is thrown:
 
-    >>> from OpenSeesTools import opensees as ops
+    >>> from openseestools import opensees as ops
     >>> @captureOutput
     ... def badOpenSeesCall():
     ...     ops.model()  # Not enough args

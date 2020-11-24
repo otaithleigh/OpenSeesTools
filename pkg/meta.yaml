@@ -1,0 +1,36 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: openseestools
+  version: {{ data.get('version') }}
+
+source:
+  git_url: "../"
+
+build:
+  noarch: python
+
+requirements:
+  host:
+    - python
+  run:
+    - python>=3.7.0
+    - attrs
+    - numpy>=1.15.0
+    - pandas>=1.0
+    - tabulate
+
+test:
+  imports:
+    - openseestools
+  requires:
+    - pytest
+  source_files:
+    - test
+  commands:
+    - pytest
+
+about:
+  home: {{ data.get('url') }}
+  license: {{ data.get('license') }}
+  summary: {{ data.get('description') }}

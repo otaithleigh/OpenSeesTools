@@ -430,21 +430,21 @@ def linspaceCoords3d(xi: float,
 #===============================================================================
 # Output handling
 #===============================================================================
-def captureOutput(func=None, *, stream='stdout', postProcess=None):
-    """Decorator to wrap a function, capturing everything sent to `stream`.
+def captureOutput(func):
+    """Decorator to wrap a function, capturing stdout and stderr.
 
-    The function's signature will change from::
+    Output is captured by `io.StringIO` objects that are attached to the
+    function, and which can be accessed after calling the function:
 
-        func(*args, **kwargs) -> return_values
+    >>> @captureOutput
+    ... def func():
+    ...     pass
+    ...
+    >>> func()
+    >>> func.stdout
 
-    to::
 
-        func(*args, **kwargs) -> (return_values, stream_output)
-
-    If the function doesn't normally return anything, `return_values` will be
-    None.
-
-    .. note::
+        .. note::
 
         Functions that do not print to Python's standard output or standard
         error will not be successfully wrapped by this decorator. For example,
@@ -457,63 +457,64 @@ def captureOutput(func=None, *, stream='stdout', postProcess=None):
     func
         Function to wrap.
 
-    Keyword Parameters
-    ------------------
-    stream : {'stdout', 'stderr'}, optional
-        Stream to capture. (default: 'stdout')
-    postProcess : optional
-        Function called on the captured output. Should take a single str
-        parameter that contains the entire output and return the modified
-        output. (default: None)
-
     Examples
     --------
+
+    Simple usage:
+
     >>> @captureOutput
     ... def sayHello():
     ...     print('hello!')
     ...
-    >>> sayHello()
-    (None, 'hello!\\n')
-    >>> @captureOutput(stream='stderr')
+    >>> sayHello()  # No output
+    >>> sayHello.stdout.getvalue()
+    'hello!\\n'
+
+    Both stdout and stderr are captured:
+
+    >>> @captureOutput
     ... def sayWhoops():
+    ...     print('hello!')
     ...     print('whoops!', file=sys.stderr)
     ...     return 0
-    >>> sayWhoops()
-    (0, 'whoops!\\n')
+    >>> sayWhoops()  # Nothing printed
+    0
+    >>> sayWhoops.stdout.getvalue()
+    'hello!\\n'
+    >>> sayWhoops.stderr.getvalue()
+    'whoops!\\n'
+
+    New `StringIO` objects are created each time the function is called:
+
+    >>> sayHello()
+    >>> sayHello.stdout
+    <_io.StringIO at 0x7f18de15b550>
+    >>> sayHello()
+    >>> sayHello.stdout
+    <_io.StringIO at 0x7f18f7968790>
+
+    Captured output persists even if an error is thrown:
+
+    >>> from OpenSeesTools import opensees as ops
     >>> @captureOutput
-    ... def sayManyThings(*things):
-    ...     print(*things)
-    ...     return things
+    ... def badOpenSeesCall():
+    ...     ops.model()  # Not enough args
     ...
-    >>> sayManyThings('hello', 'there!')
-    (('hello', 'there!'), 'hello there!\\n')
+    >>> badOpenSeesCall()
+    <Traceback>
+    opensees.OpenSeesError: See stderr output
+    >>> badOpenSeesCall.stderr.getvalue()
+    'WARNING insufficient args: model -ndm ndm <-ndf ndf>\\n'
     """
-    redirect_dispatch = {
-        'stdout': contextlib.redirect_stdout,
-        'stderr': contextlib.redirect_stderr
-    }
-    redirect = redirect_dispatch[stream]
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        wrapper.stdout = io.StringIO()
+        wrapper.stderr = io.StringIO()
+        with contextlib.redirect_stdout(wrapper.stdout):
+            with contextlib.redirect_stderr(wrapper.stderr):
+                return func(*args, **kwargs)
 
-    def captureOutputWithPostProcessing(func):
-        @functools.wraps(func)
-        def captureOutputWrapper(*args, **kwargs):
-            f = io.StringIO()
-            with redirect(f):
-                funcreturn = func(*args, **kwargs)
-
-            output = f.getvalue()
-            if postProcess is not None:
-                output = postProcess(output)
-
-            return funcreturn, output
-
-        return captureOutputWrapper
-
-    # Allow decorating without calling
-    if func is None:
-        return captureOutputWithPostProcessing
-    else:
-        return captureOutputWithPostProcessing(func)
+    return wrapper
 
 
 #===============================================================================

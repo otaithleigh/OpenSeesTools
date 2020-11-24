@@ -1,14 +1,14 @@
 import logging
 import sys
 
-import opensees as ops
+from OpenSeesTools import opensees as ops
 from OpenSeesTools import captureOutput
 
 logging.basicConfig(format='%(levelname)s:%(name)s.%(funcName)s: %(message)s',
                     level='DEBUG')
 
 
-@captureOutput(stream='stderr')
+@captureOutput
 def test_elasticTrussAnalysis():
     # ------------------------------
     # Start of model generation
@@ -67,8 +67,8 @@ def test_elasticTrussAnalysis():
     return ux, uy
 
 
-(ux, uy), output = test_elasticTrussAnalysis()
+ux, uy = test_elasticTrussAnalysis()
 print(f'ux = {ux:+g}')
 print(f'uy = {uy:+g}')
 print('output:')
-print(output)
+print(test_elasticTrussAnalysis.stderr.getvalue())

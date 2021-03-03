@@ -204,7 +204,7 @@ def nShapesCentroid(x, y, A):
     return xArea/area, yArea/area, area
 
 
-def fillOutNumbers(peaks, rate) -> np.ndarray:
+def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
     """Fill in numbers between peaks.
 
     Parameters
@@ -213,12 +213,13 @@ def fillOutNumbers(peaks, rate) -> np.ndarray:
         Peaks to fill between.
     rate : float
         Rate to use between peaks.
+    axis : int, optional
+        Axis to fill along. (default: 0)
 
     Examples
     --------
-    >>> fillOutNumbers([0, 1, -1], rate=0.25)
-    array([ 0.  ,  0.25,  0.5 ,  0.75,  1.  ,  0.75,  0.5 ,  0.25,  0.  ,
-           -0.25, -0.5 , -0.75, -1.  ])
+    >>> fillOutNumbers([0, 1, -1], rate=0.5)
+    array([ 0. ,  0.5,  1. ,  0.5,  0. , -0.5, -1. ])
     >>> fillOutNumbers([[0, 1, -1], [1, 2, -2]], rate=0.25)
     array([[ 0.  ,  1.  , -1.  ],
            [ 0.25,  1.25, -1.25],
@@ -226,30 +227,42 @@ def fillOutNumbers(peaks, rate) -> np.ndarray:
            [ 0.75,  1.75, -1.75],
            [ 1.  ,  2.  , -2.  ]])
 
-    Ported from the MATLAB function written by Mark Denavit.
+    For multi-dimensional arrays, `rate` is a maximum; the peaks will remain
+    lined up, but the actual difference will vary.
+
+    >>> fillOutNumbers([[0, 1, -1], [1, 2, -2]], rate=1.0, axis=1)
+    array([[ 0. ,  1. ,  0.5,  0. , -0.5, -1. ],
+           [ 1. ,  2. ,  1. ,  0. , -1. , -2. ]])
+        
+    When `rate` does not divide the distance between two peaks into an integer
+    number of steps, the rounded number of steps is used instead:
+
+    >>> fillOutNumbers([0, 1], rate=0.45)
+    array([0.        , 0.33333333, 0.66666667, 1.        ])
     """
-    peaks = np.asanyarray(peaks)
+    peaks: np.ndarray = np.asanyarray(peaks)
+    if peaks.size < 2:
+        raise ValueError(f'At least two peaks needed to fill between')
 
-    if len(peaks.shape) == 1:
-        peaks = peaks.reshape(peaks.size, 1)
+    # Get all axes other than `axis` so we can do reductions down to that axis
+    axes = list(range(peaks.ndim))
+    axes.pop(axis)
+    axes = tuple(axes)
 
-    if peaks.shape[0] == 1:
-        peaks = peaks.T
+    # Determine the number of steps between each peak.
+    peaksDiff = np.diff(peaks, axis=axis)
+    numsteps = np.round(np.max(np.abs(peaksDiff/rate), axis=axes)).astype('int')
 
-    numpeaks = peaks.shape[0]
-    numbers = [peaks[0, :]]
+    numbers = []
+    numPeaks = peaks.shape[axis]
+    for i in range(numPeaks - 1):
+        start = np.take(peaks, i, axis)
+        stop = np.take(peaks, i + 1, axis)
+        num = numsteps[i]
+        numbers.append(np.linspace(start, stop, num, endpoint=False, axis=axis))
+    numbers.append(np.take(peaks, [-1], axis))
 
-    for i in range(numpeaks - 1):
-        diff = peaks[i + 1, :] - peaks[i, :]
-        numsteps = int(np.maximum(2, 1 + np.ceil(np.max(np.abs(diff/rate)))))
-        numbers_to_add = np.linspace(peaks[i, :], peaks[i + 1, :], numsteps)
-        numbers.append(numbers_to_add[1:, :])
-
-    numbers = np.vstack(numbers)
-    if 1 in numbers.shape:
-        numbers = numbers.flatten()
-
-    return numbers
+    return np.concatenate(numbers, axis)
 
 
 def linspaceCoords2d(xi,

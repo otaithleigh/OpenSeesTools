@@ -204,7 +204,7 @@ def nShapesCentroid(x, y, A):
     return xArea/area, yArea/area, area
 
 
-def fillOutNumbers(peaks, rate):
+def fillOutNumbers(peaks, rate) -> np.ndarray:
     """Fill in numbers between peaks.
 
     Parameters

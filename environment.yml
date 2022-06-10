@@ -1,10 +1,9 @@
 name: openseestools
 channels:
-  - defaults
   - conda-forge
 dependencies:
   - python=3.8
-  - anaconda
+  - attrs
   - matplotlib
   - numpy
   - pandas>=1.0

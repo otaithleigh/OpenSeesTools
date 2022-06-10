@@ -14,7 +14,7 @@ requirements:
   host:
     - python
   run:
-    - python>=3.7.0
+    - python>=3.8.0
     - attrs
     - matplotlib
     - numpy>=1.15.0

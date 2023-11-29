@@ -92,7 +92,7 @@ class Elastic():
     Es: float = attr.ib(converter=float)
 
     def create(self, fr):
-        ops.uniaxialMaterial('Elastic', tag, self.Es)
+        ops.uniaxialMaterial('Elastic', self.tag, self.Es)
 
 
 @attr.s(auto_attribs=True)
@@ -429,7 +429,7 @@ class WSection2d(AbstractWSection):
                 patchRect2d(matTag, nfw, self.d, -self.b1, +self.b1)
                 patchRect2d(matTag, nff, 2*self.tf, -self.b2, -self.b1)
             else:
-                raise ValueError(f'Unknown bending axis: {axis}')
+                raise ValueError(f'Unknown bending axis: {self.axis}')
             lastTag = matTag
 
         if self.k > self.tf:
@@ -497,7 +497,7 @@ class WSection2d(AbstractWSection):
             ops.fiber(+self.b1 + ybar, 0.0, 2*area, matTag)
             ops.fiber(-self.b1 - ybar, 0.0, 2*area, matTag)
         else:
-            raise ValueError(f'Unknown bending axis: {axis}')
+            raise ValueError(f'Unknown bending axis: {self.axis}')
 
 
 @attr.s(auto_attribs=True)

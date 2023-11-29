@@ -265,7 +265,7 @@ class SectionAnalysis(OpenSeesAnalysis):
         if plotAs2d:
             disc.fiberLocZ = np.arange(len(disc.fiberLocY)) + 1
             xlabel = 'Fiber number'
-            ylabel = 'Z-coordinate'
+            ylabel = 'Y-coordinate'
         else:
             xlabel = 'Z-coordinate'
             ylabel = 'Y-coordinate'

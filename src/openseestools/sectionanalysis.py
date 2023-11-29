@@ -7,6 +7,7 @@ import attr
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.colors import ListedColormap
 from tabulate import tabulate
 
 from . import opensees as ops
@@ -259,8 +260,15 @@ class SectionAnalysis(OpenSeesAnalysis):
         """
         disc = self.getDiscretization()
 
-        uniqueMats, _ = np.unique(disc.fiberMat, return_inverse=True)
+        uniqueMats, matIndex = np.unique(disc.fiberMat, return_inverse=True)
         nMats = len(uniqueMats)
+
+        if nMats <= 10:
+            cmap = ListedColormap(plt.colormaps['tab10'].colors[:nMats])
+        elif nMats <= 20:
+            cmap = ListedColormap(plt.colormaps['tab20'].colors[:nMats])
+        else:
+            cmap = 'turbo'
 
         if plotAs2d:
             disc.fiberLocZ = np.arange(len(disc.fiberLocY)) + 1
@@ -272,7 +280,8 @@ class SectionAnalysis(OpenSeesAnalysis):
 
         if ax is None:
             _, ax = plt.subplots()
-        ax.scatter(disc.fiberLocZ, disc.fiberLocY, 20)
+
+        ax.scatter(disc.fiberLocZ, disc.fiberLocY, s=20, c=matIndex, cmap=cmap)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 

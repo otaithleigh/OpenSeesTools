@@ -58,6 +58,10 @@ weak_section = (WSection2d(sectag, nfibers, 'weak', **sections[section])
     .setMaterial('ElasticPP', mattag, Es, Fy)
     .addLehigh(frc, nsectors))
 
+def create_section(section: WSection2d):
+    section.create()
+    return section.secTag
+
 #===============================================================================
 # Do analysis
 #===============================================================================
@@ -66,9 +70,11 @@ A_model = {}
 Iz_expected = {'strong': expected[section]['Ix'], 'weak': expected[section]['Iy']}
 Iz_model = {}
 for section in [strong_section, weak_section]:
-    analysis = SectionAnalysis(section.create, sectag)
+    analysis = SectionAnalysis(lambda: create_section(section))
     discretization = analysis.getDiscretization()
+    print(section.axis.title() + ':')
     analysis.printMaterialInfo(floatfmt=floatfmt)
+    analysis.plotDiscretization(plotAs2d=True)
     print()
     print()
 
@@ -99,3 +105,4 @@ for axis in ['strong', 'weak']:
 
 table = tabulate(rows, headers, tablefmt, floatfmt=floatfmt)
 print(table)
+plt.show()

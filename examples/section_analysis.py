@@ -36,24 +36,31 @@ J = 19.7*inch**4
 
 
 def createSection():
-    ops.uniaxialMaterial('Hardening', 1, E, Fy, H, 0.0)
-    ops.section('Fiber', 1, '-GJ', G*J)
+    sectag = 1
+    flangemat = 1
+    webmat = 2
+
+    ops.uniaxialMaterial('Hardening', flangemat, E, Fy, H, 0.0)
+    ops.uniaxialMaterial('Hardening', webmat, E, Fy, H, 0.0)
+    ops.section('Fiber', sectag, '-GJ', G*J)
+
     # Flanges
     nX = nfx
     nY = int(np.ceil(nfy*tf/d))
-    ops.patch('rect', 1, nY, nX, 0.5*d - tf, -0.5*bf, 0.5*d, 0.5*bf)
-    ops.patch('rect', 1, nY, nX, -0.5*d, -0.5*bf, -0.5*d + tf, 0.5*bf)
+    ops.patch('rect', flangemat, nY, nX, 0.5*d - tf, -0.5*bf, 0.5*d, 0.5*bf)
+    ops.patch('rect', flangemat, nY, nX, -0.5*d, -0.5*bf, -0.5*d + tf, 0.5*bf)
 
     # Web
     nX = int(np.ceil(nfx*tw/bf))
     nY = int(np.ceil(nfx*(d - 2*tf)/bf))
-    ops.patch('rect', 1, nY, nX, -0.5*d + tf, -0.5*tw, 0.5*d - tf, 0.5*tw)
+    ops.patch('rect', webmat, nY, nX, -0.5*d + tf, -0.5*tw, 0.5*d - tf, 0.5*tw)
 
+    return sectag
 
 #-------------------------------------------------------------------------------
 # Tests
 #-------------------------------------------------------------------------------
-analysis = SectionAnalysis(createSection, secTag=1)
+analysis = SectionAnalysis(createSection)
 print('W14x159:')
 print('     A = 46.7 in^2')
 print('    Ix = 1900 in^4')
@@ -62,7 +69,9 @@ print()
 analysis.printMaterialInfo()
 
 fig, ax = plt.subplots()
+ax.set_aspect('equal')
 analysis.plotDiscretization(ax)
 
 fig.tight_layout()
 fig.savefig('section.svg')
+plt.show()

@@ -6,6 +6,7 @@ import io
 import logging
 import pathlib
 import tempfile
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -32,8 +33,6 @@ __all__ = [
     'twoFiberSection',
     'updateRayleighDamping',
 ]
-
-logger = logging.getLogger(__name__)
 
 
 # ===============================================================================
@@ -203,7 +202,6 @@ def nShapesCentroid(x, y, A):
     xArea = x.dot(A)
     yArea = y.dot(A)
     area = np.sum(A)
-    logger.debug(f'xArea={xArea:g}, yArea={yArea:g}, area={area:g}')
 
     return xArea / area, yArea / area, area
 
@@ -610,8 +608,8 @@ def patchRect2d(matTag, nf, width, startHeight, endHeight):
     endHeight : float
         Ending height of the patch.
     """
-    if startHeight >= endHeight:
-        logger.warning('Creating fibers with a negative area')
+    if startHeight >= endHeight or width < 0:
+        warnings.warn('Creating fibers with a negative area', stacklevel=2)
     width = float(width)
     startHeight = float(startHeight)
     endHeight = float(endHeight)
@@ -702,7 +700,6 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
 
         _, centroid, area = nShapesCentroid(x, y, A)
         yf = center + sign * centroid
-        logger.debug(f'Creating fiber at {yf:g} with area {area:g}')
         ops.fiber(yf, 0.0, area, matTag)
 
 

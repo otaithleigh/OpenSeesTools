@@ -242,7 +242,7 @@ def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
     """
     peaks: np.ndarray = np.asanyarray(peaks)
     if peaks.size < 2:
-        raise ValueError(f'At least two peaks needed to fill between')
+        raise ValueError('At least two peaks needed to fill between')
 
     # Get all axes other than `axis` so we can do reductions down to that axis
     axes = list(range(peaks.ndim))

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing
 import json
+from typing import Callable, Optional
 
 import attr
 import matplotlib.pyplot as plt
@@ -145,59 +145,43 @@ _tabulate_bottom_row_sep_loc = {
 
 
 class SectionAnalysis(OpenSeesAnalysis):
-    """
+    """Analyze a fiber section.
+
     Parameters
     ----------
-    sectionFactory : function
+    sectionFactory : () -> int
         Function that creates the section to be analyzed when called with no
-        arguments.
-    secTag : int, optional
-        Tag used by the section created by `sectionFactory`. (default: 1)
+        arguments, and returns the tag of the section. Note that the analysis
+        is 3D and 6DOF, so a GJ value must be provided for fiber sections.
     scratchPath : path_like, optional
         Path to the scratch directory. If None, uses the system temporary
         directory. (default: None)
     analysisID : optional
         Unique ID for the analysis. (default: 0)
     """
-    def __init__(self, sectionFactory, secTag=1, scratchPath=None,
-                 analysisID=0):
-        self._sectionFactory = None
-        self.sectionFactory = sectionFactory
-        self._secTag = None
-        self.secTag = secTag
-        self._cachedDiscretization = None
+    def __init__(self, sectionFactory: Callable[[], int], scratchPath=None, analysisID=0):
+        self._sectionFactory = sectionFactory
+        self._cachedDiscretization: Optional[SectionDiscretization] = None
         super().__init__(scratchPath, analysisID)
 
     @property
     def sectionFactory(self):
         """Function that creates the section to be analyzed when called with no
-        arguments."""
+        arguments, and returns the tag of the section."""
         return self._sectionFactory
 
     @sectionFactory.setter
-    def sectionFactory(self, factory):
+    def sectionFactory(self, factory: Callable[[], int]):
         # Clear the discretization cache if settings change.
         if self.sectionFactory != factory:
             self._cachedDiscretization = None
         self._sectionFactory = factory
 
-    @property
-    def secTag(self):
-        """Tag used by the section created by `sectionFactory`."""
-        return self._secTag
-
-    @secTag.setter
-    def secTag(self, tag):
-        # Clear the discretization cache if settings change.
-        if self.secTag != int(tag):
-            self._cachedDiscretization = None
-        self._secTag = int(tag)
-
     def getDiscretization(self) -> SectionDiscretization:
         """Get the discretization for the section.
 
         Note that the discretization is cached; this cache is purged when
-        changing `sectionFactory` or `secTag`.
+        changing `sectionFactory`.
         """
         if self._cachedDiscretization is None:
             self.logger.debug('Cache out of date: regenerating discretization')
@@ -214,10 +198,10 @@ class SectionAnalysis(OpenSeesAnalysis):
         # Create model
         ops.wipe()
         ops.model('basic', '-ndm', 3, '-ndf', 6)
-        self.sectionFactory()
+        secTag = self.sectionFactory()
         ops.node(1, 0.0, 0.0, 0.0)
         ops.node(2, 0.0, 0.0, 0.0)
-        ops.element('zeroLengthSection', 1, 1, 2, self.secTag)
+        ops.element('zeroLengthSection', 1, 1, 2, secTag)
         ops.printModel('-JSON', '-file', str(file_print))
         ops.wipe()
 

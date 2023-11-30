@@ -6,6 +6,7 @@ import io
 import logging
 import pathlib
 import tempfile
+from typing import Optional
 
 import numpy as np
 
@@ -324,15 +325,15 @@ def linspacePeaks(peaks, num, axis=0) -> np.ndarray:
 
 
 def linspaceCoords2d(
-    xi,
-    yi,
-    xj,
-    yj,
-    numElements,
-    iOffset=0.0,
-    jOffset=0.0,
-    offsetFactor=False,
-    imperf=0.0,
+    xi: float,
+    yi: float,
+    xj: float,
+    yj: float,
+    numElements: int,
+    iOffset: int = 0.0,
+    jOffset: int = 0.0,
+    offsetFactor: bool = False,
+    imperf: float = 0.0,
 ):
     """Generate evenly-spaced coordinates for a 2D member, with optional rigid
     offset and sinusoidal imperfection calculation.
@@ -405,7 +406,7 @@ def linspaceCoords3d(
     offsetIsFactor: bool = False,
     imperf: float = 0.0,
     imperfAngle: float = 0.0,
-    imperfPlane: np.ndarray = None,
+    imperfPlane: Optional[np.ndarray] = None,
 ):
     """Generate evenly-spaced coordinates for a 3D member, with optional rigid
     offset and sinusoidal imperfection calculation.

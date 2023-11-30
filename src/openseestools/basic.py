@@ -639,7 +639,7 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
         ops.fiber(yf, 0.0, area, matTag)
 
 
-def fourFiberSectionGJ(secTag, matTag, area, Iy, Iz, GJ):
+def fourFiberSectionGJ(secTag, matTag, A, Iy, Iz, GJ):
     """Create a fiber section with four fibers with desired section properties.
 
     Parameters
@@ -660,12 +660,12 @@ def fourFiberSectionGJ(secTag, matTag, area, Iy, Iz, GJ):
     """
     if secTag is not None:
         ops.section('Fiber', int(secTag), '-GJ', float(GJ))
-        fourFiberSectionGJ(None, matTag, area, Iy, Iz, GJ)
+        fourFiberSectionGJ(None, matTag, A, Iy, Iz, GJ)
         return
 
-    fiberA = float(0.25*area)
-    fiberZ = float(np.sqrt(Iy/area))
-    fiberY = float(np.sqrt(Iz/area))
+    fiberA = float(0.25*A)
+    fiberZ = float(np.sqrt(Iy/A))
+    fiberY = float(np.sqrt(Iz/A))
 
     ops.fiber(+fiberY, +fiberZ, fiberA, int(matTag))
     ops.fiber(+fiberY, -fiberZ, fiberA, int(matTag))
@@ -673,7 +673,7 @@ def fourFiberSectionGJ(secTag, matTag, area, Iy, Iz, GJ):
     ops.fiber(-fiberY, -fiberZ, fiberA, int(matTag))
 
 
-def twoFiberSection(secTag, matTag, area, I):
+def twoFiberSection(secTag, matTag, A, Iz):
     """Create a fiber section with two fibers with desired section properties.
 
     Parameters
@@ -684,16 +684,16 @@ def twoFiberSection(secTag, matTag, area, I):
         Uniaxial material to use.
     A : float
         Desired total cross-sectional area.
-    I : float
+    Iz : float
         Desired moment of inertia.
     """
     if secTag is not None:
         ops.section('Fiber', int(secTag))
-        twoFiberSection(None, matTag, area, I)
+        twoFiberSection(None, matTag, A, Iz)
         return
 
-    fiberA = float(0.5*area)
-    fiberY = float(np.sqrt(I/area))
+    fiberA = float(0.5*A)
+    fiberY = float(np.sqrt(Iz/A))
 
     ops.fiber(+fiberY, 0.0, fiberA, int(matTag))
     ops.fiber(-fiberY, 0.0, fiberA, int(matTag))

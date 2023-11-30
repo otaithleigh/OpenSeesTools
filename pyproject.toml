@@ -1,6 +1,31 @@
 [build-system]
 requires = [
-  "setuptools >= 40.9.0",
-  "wheel",
+    "setuptools >= 40.9.0",
+    "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "openseestools"
+version = "0.3.0"
+description = "Extensions to OpenSeesPy."
+readme = "README.rst"
+authors = [
+    {name = "Peter Talley", email = "ptalley2@vols.utk.edu"}
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "attrs",
+    "matplotlib",
+    "numpy",
+    "pandas>=1.0",
+    "tabulate",
+]
+
+[project.urls]
+Homepage = "https://github.com/otaithleigh/OpenSeesTools"

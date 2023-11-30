@@ -23,6 +23,7 @@ __all__ = [
     'getClassLogger',
     'linspaceCoords2d',
     'linspaceCoords3d',
+    'linspacePeaks',
     'nShapesCentroid',
     'patchRect2d',
     'patchHalfCircTube2d',
@@ -205,7 +206,7 @@ def nShapesCentroid(x, y, A):
 
 
 def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
-    """Fill in numbers between peaks.
+    """Fill in numbers between peaks at a specified rate.
 
     Parameters
     ----------
@@ -215,6 +216,12 @@ def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
         Rate to use between peaks.
     axis : int, optional
         Axis to fill along. (default: 0)
+
+    See Also
+    --------
+    linspacePeaks :
+        Fill in numbers between peaks, using the same number of steps
+        each time (instead of calculating from a given rate).
 
     Examples
     --------
@@ -233,7 +240,7 @@ def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
     >>> fillOutNumbers([[0, 1, -1], [1, 2, -2]], rate=1.0, axis=1)
     array([[ 0. ,  1. ,  0.5,  0. , -0.5, -1. ],
            [ 1. ,  2. ,  1. ,  0. , -1. , -2. ]])
-        
+
     When `rate` does not divide the distance between two peaks into an integer
     number of steps, the rounded number of steps is used instead:
 
@@ -260,6 +267,54 @@ def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
         stop = np.take(peaks, i + 1, axis)
         num = numsteps[i]
         numbers.append(np.linspace(start, stop, num, endpoint=False, axis=axis))
+    numbers.append(np.take(peaks, [-1], axis))
+
+    return np.concatenate(numbers, axis)
+
+
+def linspacePeaks(peaks, num, axis=0) -> np.ndarray:
+    """Linearly space numbers between peaks.
+
+    Parameters
+    ----------
+    peaks : array_like
+        Peaks to fill between.
+    num : int
+        Number of steps to use between peaks.
+    axis : int, optional
+        Axis to fill along. (default: 0)
+
+    See Also
+    --------
+    fillOutNumbers :
+        Fill numbers between peaks at a specified rate.
+
+    Examples
+    --------
+    >>> linspacePeaks([0, 1, -1], num=1)
+    array([ 0. ,  0.5,  1. ,  0. , -1. ])
+    >>> linspacePeaks([[0, 1, -1], [1, 2, -2]], num=4)
+    array([[ 0. ,  1. , -1. ],
+           [ 0.2,  1.2, -1.2],
+           [ 0.4,  1.4, -1.4],
+           [ 0.6,  1.6, -1.6],
+           [ 0.8,  1.8, -1.8],
+           [ 1. ,  2. , -2. ]])
+    """
+    peaks: np.ndarray = np.asanyarray(peaks)
+    if peaks.size < 2:
+        raise ValueError('At least two peaks needed to fill between')
+
+    numbers = []
+    numPeaks = peaks.shape[axis]
+    if num < 0:
+        raise ValueError('Number of additional steps must be non-negative.'
+                         f' (got {num!r})')
+
+    for i in range(numPeaks - 1):
+        start = np.take(peaks, i, axis)
+        stop = np.take(peaks, i + 1, axis)
+        numbers.append(np.linspace(start, stop, num + 1, endpoint=False, axis=axis))
     numbers.append(np.take(peaks, [-1], axis))
 
     return np.concatenate(numbers, axis)

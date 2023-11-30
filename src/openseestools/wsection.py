@@ -18,9 +18,9 @@ import numpy as np
 from . import opensees as ops
 from .basic import patchRect2d, twoFiberSection, fourFiberSectionGJ
 
-#===============================================================================
+# ===============================================================================
 # Globals
-#===============================================================================
+# ===============================================================================
 __all__ = [
     'WSection2d',
 ]
@@ -28,33 +28,34 @@ __all__ = [
 WSECTION2D_BENDING_AXES = {'strong', 'weak'}
 
 
-#===============================================================================
+# ===============================================================================
 # Exceptions
-#===============================================================================
+# ===============================================================================
 class IncompleteSectionError(Exception):
     """Raised when trying to add an incomplete section to the domain."""
+
     pass
 
 
-#===============================================================================
+# ===============================================================================
 # Validators
-#===============================================================================
+# ===============================================================================
 def is_positive(instance, attribute, value):
     if value <= 0:
         raise ValueError(f'`{attribute.name}` must be positive')
 
 
-#===============================================================================
+# ===============================================================================
 # Builder objects
-#===============================================================================
+# ===============================================================================
 @attr.s(auto_attribs=True)
-class LehighStressPattern():
+class LehighStressPattern:
     frc: float
     nSectors: int
 
 
 @attr.s(auto_attribs=True)
-class AddedStiffness2d():
+class AddedStiffness2d:
     EA: float
     EI: float
 
@@ -64,7 +65,7 @@ class AddedStiffness2d():
 
 
 @attr.s(auto_attribs=True)
-class AddedStiffness3d():
+class AddedStiffness3d:
     EA: float
     EIz: float
     EIy: float
@@ -75,11 +76,11 @@ class AddedStiffness3d():
         fourFiberSectionGJ(None, matTag, self.EA, self.EIy, self.EIz, self.GJ)
 
 
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Materials
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 @attr.s(auto_attribs=True)
-class MatTag():
+class MatTag:
     tag: int = attr.ib(converter=int)
 
     def create(self, fr):
@@ -87,7 +88,7 @@ class MatTag():
 
 
 @attr.s(auto_attribs=True)
-class Elastic():
+class Elastic:
     tag: int = attr.ib(converter=int)
     Es: float = attr.ib(converter=float)
 
@@ -96,20 +97,20 @@ class Elastic():
 
 
 @attr.s(auto_attribs=True)
-class ElasticPP():
+class ElasticPP:
     tag: int = attr.ib(converter=int)
     Es: float = attr.ib(converter=float)
     Fy: float = attr.ib(converter=float)
 
     def create(self, fr):
-        epsyP = self.Fy/self.Es
-        epsyN = -self.Fy/self.Es
-        eps0 = -fr/self.Es
+        epsyP = self.Fy / self.Es
+        epsyN = -self.Fy / self.Es
+        eps0 = -fr / self.Es
         ops.uniaxialMaterial('ElasticPP', self.tag, self.Es, epsyP, epsyN, eps0)
 
 
 @attr.s(auto_attribs=True)
-class Steel01():
+class Steel01:
     tag: int = attr.ib(converter=int)
     Es: float = attr.ib(converter=float)
     Fy: float = attr.ib(converter=float)
@@ -120,15 +121,28 @@ class Steel01():
 
 
 @attr.s(auto_attribs=True)
-class Steel02():
+class Steel02:
     tag: int = attr.ib(converter=int)
     Es: float = attr.ib(converter=float)
     Fy: float = attr.ib(converter=float)
     b: float = attr.ib(converter=float)
 
     def create(self, fr):
-        ops.uniaxialMaterial('Steel02', self.tag, self.Fy, self.Es, self.b,
-                             20.0, 0.925, 0.15, 0.0, 1.0, 0.0, 1.0, fr)
+        ops.uniaxialMaterial(
+            'Steel02',
+            self.tag,
+            self.Fy,
+            self.Es,
+            self.b,
+            20.0,
+            0.925,
+            0.15,
+            0.0,
+            1.0,
+            0.0,
+            1.0,
+            fr,
+        )
 
 
 WSECTION_MATERIAL_DISPATCH = {
@@ -142,9 +156,9 @@ WSECTION_MATERIAL_DISPATCH = {
 MATERIALS_WITH_RESIDUAL_STRESS_SUPPORT = [ElasticPP, Steel02]
 
 
-#===============================================================================
+# ===============================================================================
 # Sections
-#===============================================================================
+# ===============================================================================
 @attr.s(repr=False)
 class AbstractWSection(abc.ABC):
     def __attrs_post_init__(self):
@@ -154,17 +168,22 @@ class AbstractWSection(abc.ABC):
         self._overrideGJ = None
 
     def __repr__(self):
-        init_args = (f'{a.name}={getattr(self, a.name)!r}'
-                     for a in self.__attrs_attrs__ if a.init)
+        init_args = (
+            f'{a.name}={getattr(self, a.name)!r}'
+            for a in self.__attrs_attrs__
+            if a.init
+        )
         init_args_repr = ', '.join(init_args)
 
-        repr_ = (f'<{self.__class__.__name__}('
-                 f'{init_args_repr}'
-                 ')'
-                 f' [Material: {self._material}]'
-                 f' [Residual stress: {self._residualStress}]'
-                 f' [Additional stiffness: {self._addedStiffness}]'
-                 '>')
+        repr_ = (
+            f'<{self.__class__.__name__}('
+            f'{init_args_repr}'
+            ')'
+            f' [Material: {self._material}]'
+            f' [Residual stress: {self._residualStress}]'
+            f' [Additional stiffness: {self._addedStiffness}]'
+            '>'
+        )
         return repr_
 
     def create(self):
@@ -183,9 +202,11 @@ class AbstractWSection(abc.ABC):
             - If the material for the section has not been set (`setMaterial`)
         """
         if self._material is None:
-            raise IncompleteSectionError(f'{self.__class__.__name__}: '
-                                         'cannot create section without '
-                                         'material information')
+            raise IncompleteSectionError(
+                f'{self.__class__.__name__}: '
+                'cannot create section without '
+                'material information'
+            )
         ops.section('Fiber', self.secTag, '-GJ', self.GJ)
         lastTag = self.createFibers()
         if self._addedStiffness is not None:
@@ -197,49 +218,49 @@ class AbstractWSection(abc.ABC):
     def createFibers(self) -> int:
         pass
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # Additional section dimensions
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     @property
     def dw(self):
         """Depth of the web."""
-        return self.d - 2*self.tf
+        return self.d - 2 * self.tf
 
     @property
     def d1(self):
         """Half the depth of the web."""
-        return self.dw/2
+        return self.dw / 2
 
     @property
     def d2(self):
         """Half the overall depth."""
-        return self.d/2
+        return self.d / 2
 
     @property
     def b1(self):
         """Half the thickness of the web."""
-        return self.tw/2
+        return self.tw / 2
 
     @property
     def b2(self):
         """Half the width of the flange."""
-        return self.bf/2
+        return self.bf / 2
 
     @property
     def GJ(self):
         if self._overrideGJ is None:
-            G = self._material.Es/(2*(1 + 0.3))
-            J = (2*self.bf*self.tf**3 + (self.d - 2*self.tf)*self.tw**2)/3
-            self._overrideGJ = G*J
+            G = self._material.Es / (2 * (1 + 0.3))
+            J = (2 * self.bf * self.tf**3 + (self.d - 2 * self.tf) * self.tw**2) / 3
+            self._overrideGJ = G * J
         return float(self._overrideGJ)
 
     @GJ.setter
     def GJ(self, value):
         self._overrideGJ = value
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # Builder pattern functions
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def setMaterial(self, material, *args, **kwargs):
         """Set the material used by the section.
 
@@ -348,6 +369,7 @@ class WSection2d(AbstractWSection):
     addStiffness(EA, EI) : optional
         Add additional elastic stiffness to the section.
     """
+
     secTag: int = attr.ib(converter=attr.converters.optional(int))
     nf: int = attr.ib(validator=is_positive)
     axis: str = attr.ib(validator=attr.validators.in_(WSECTION2D_BENDING_AXES))
@@ -355,8 +377,7 @@ class WSection2d(AbstractWSection):
     tw: float = attr.ib(validator=is_positive)
     bf: float = attr.ib(validator=is_positive)
     tf: float = attr.ib(validator=is_positive)
-    k: float = attr.ib(validator=attr.validators.optional(is_positive),
-                       default=None)
+    k: float = attr.ib(validator=attr.validators.optional(is_positive), default=None)
 
     def __attrs_post_init__(self):
         if self.k is None:
@@ -365,9 +386,9 @@ class WSection2d(AbstractWSection):
             raise ValueError('`k` should be larger than `tf`')
         super().__attrs_post_init__()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # Other constructors
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     @classmethod
     def fromName(cls, name, secTag, nf, axis, units='US'):
         """Look up shape data to create the section.
@@ -389,9 +410,9 @@ class WSection2d(AbstractWSection):
         """
         raise NotImplementedError()
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # Builder pattern functions
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def addStiffness(self, EA=0.0, EI=0.0):
         """Add additional elastic stiffness to the section.
 
@@ -405,29 +426,29 @@ class WSection2d(AbstractWSection):
         self._addedStiffness = AddedStiffness2d(EA, EI)
         return self
 
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     # Fiber definition stuff
-    #---------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------
     def createFibers(self):
         if self._residualStress is not None and (
-                self._material.__class__ in
-                MATERIALS_WITH_RESIDUAL_STRESS_SUPPORT):
+            self._material.__class__ in MATERIALS_WITH_RESIDUAL_STRESS_SUPPORT
+        ):
             lastTag = self.createFibersWithResidualStress()
         else:
             matTag = self._material.tag
             self._material.create(fr=0.0)
             if self.axis == 'strong':
-                nff = np.ceil((self.nf/self.d)*self.tf)
-                nfw = np.ceil((self.nf/self.d)*(self.d - 2*self.tf))
+                nff = np.ceil((self.nf / self.d) * self.tf)
+                nfw = np.ceil((self.nf / self.d) * (self.d - 2 * self.tf))
                 patchRect2d(matTag, nff, self.bf, +self.d1, +self.d2)
                 patchRect2d(matTag, nfw, self.tw, -self.d1, +self.d1)
                 patchRect2d(matTag, nff, self.bf, -self.d2, -self.d1)
             elif self.axis == 'weak':
-                nff = np.ceil((self.nf/self.bf)*(self.bf - self.tw)/2)
-                nfw = np.ceil((self.nf/self.bf)*self.tw)
-                patchRect2d(matTag, nff, 2*self.tf, +self.b1, +self.b2)
+                nff = np.ceil((self.nf / self.bf) * (self.bf - self.tw) / 2)
+                nfw = np.ceil((self.nf / self.bf) * self.tw)
+                patchRect2d(matTag, nff, 2 * self.tf, +self.b1, +self.b2)
                 patchRect2d(matTag, nfw, self.d, -self.b1, +self.b1)
-                patchRect2d(matTag, nff, 2*self.tf, -self.b2, -self.b1)
+                patchRect2d(matTag, nff, 2 * self.tf, -self.b2, -self.b1)
             else:
                 raise ValueError(f'Unknown bending axis: {self.axis}')
             lastTag = matTag
@@ -440,18 +461,21 @@ class WSection2d(AbstractWSection):
         frc = self._residualStress.frc
         if self.k > self.tf:
             r = self.k - self.tf
-            fillet_area = (1 - 0.25*np.pi)*r**2
-            frt = -frc*(self.bf*self.tf)/(self.bf*self.tf + self.tw*self.dw +
-                                          4*fillet_area)
+            fillet_area = (1 - 0.25 * np.pi) * r**2
+            frt = (
+                -frc
+                * (self.bf * self.tf)
+                / (self.bf * self.tf + self.tw * self.dw + 4 * fillet_area)
+            )
         else:
-            frt = -frc*(self.bf*self.tf)/(self.bf*self.tf + self.tw*self.dw)
+            frt = -frc * (self.bf * self.tf) / (self.bf * self.tf + self.tw * self.dw)
         nSectors = self._residualStress.nSectors
 
         # Create residual stress materials
         lehighStartTag = self._material.tag
         for i in range(nSectors):
-            x = (i + 0.5)/nSectors
-            fr = frc + x*(frt - frc)
+            x = (i + 0.5) / nSectors
+            fr = frc + x * (frt - frc)
             self._material.create(fr)
             self._material.tag += 1
         self._material.create(frt)
@@ -460,42 +484,42 @@ class WSection2d(AbstractWSection):
         # Create the actual fibers
         if self.axis == 'strong':
             # Flanges
-            bf1 = self.bf/nSectors
-            nff = np.ceil(self.nf/self.d)*self.tf
+            bf1 = self.bf / nSectors
+            nff = np.ceil(self.nf / self.d) * self.tf
             for i in range(nSectors):
                 matTag = lehighStartTag + i
                 patchRect2d(matTag, nff, bf1, +self.d1, +self.d2)
                 patchRect2d(matTag, nff, bf1, -self.d2, -self.d1)
             # Web
             matTag = lehighStartTag + nSectors
-            nfw = np.ceil((self.nf/self.d)*(self.d - 2*self.tf))
+            nfw = np.ceil((self.nf / self.d) * (self.d - 2 * self.tf))
             patchRect2d(matTag, nfw, self.tw, -self.d1, +self.d1)
         elif self.axis == 'weak':
             # Flanges
-            b21 = self.b2/nSectors
-            nff = np.ceil((self.nf/self.bf)*b21)
+            b21 = self.b2 / nSectors
+            nff = np.ceil((self.nf / self.bf) * b21)
             for i in range(nSectors):
-                bft = self.b2 - i*b21
+                bft = self.b2 - i * b21
                 matTag = lehighStartTag + i
-                patchRect2d(matTag, nff, 2*self.tf, bft - b21, +bft)
-                patchRect2d(matTag, nff, 2*self.tf, -bft, b21 - bft)
+                patchRect2d(matTag, nff, 2 * self.tf, bft - b21, +bft)
+                patchRect2d(matTag, nff, 2 * self.tf, -bft, b21 - bft)
             # Web
             matTag = lehighStartTag + nSectors
-            nfw = np.ceil((self.nf/self.bf)*self.tw)
+            nfw = np.ceil((self.nf / self.bf) * self.tw)
             patchRect2d(matTag, nfw, self.dw, -self.b1, +self.b1)
 
         return matTag
 
     def createFillets(self, matTag):
         r = self.k - self.tf  # Radius of fillet
-        area = (1 - 0.25*np.pi)*r**2  # Area of individual fillet
-        ybar = 2/(12 - 3*np.pi)*r  # Centroid of fillet from flange face
+        area = (1 - 0.25 * np.pi) * r**2  # Area of individual fillet
+        ybar = 2 / (12 - 3 * np.pi) * r  # Centroid of fillet from flange face
         if self.axis == 'strong':
-            ops.fiber(+self.d1 - ybar, 0.0, 2*area, matTag)
-            ops.fiber(-self.d1 + ybar, 0.0, 2*area, matTag)
+            ops.fiber(+self.d1 - ybar, 0.0, 2 * area, matTag)
+            ops.fiber(-self.d1 + ybar, 0.0, 2 * area, matTag)
         elif self.axis == 'weak':
-            ops.fiber(+self.b1 + ybar, 0.0, 2*area, matTag)
-            ops.fiber(-self.b1 - ybar, 0.0, 2*area, matTag)
+            ops.fiber(+self.b1 + ybar, 0.0, 2 * area, matTag)
+            ops.fiber(-self.b1 - ybar, 0.0, 2 * area, matTag)
         else:
             raise ValueError(f'Unknown bending axis: {self.axis}')
 
@@ -539,6 +563,7 @@ class WSection3d(AbstractWSection):
     addStiffness(EA, EIz, EIy, GJ) : optional
         Add additional elastic stiffness to the section.
     """
+
     secTag: int = attr.ib(converter=attr.converters.optional(int))
     nf1: int = attr.ib(validator=is_positive)
     nf2: str = attr.ib(validator=is_positive)
@@ -546,8 +571,7 @@ class WSection3d(AbstractWSection):
     tw: float = attr.ib(validator=is_positive)
     bf: float = attr.ib(validator=is_positive)
     tf: float = attr.ib(validator=is_positive)
-    k: float = attr.ib(validator=attr.validators.optional(is_positive),
-                       default=None)
+    k: float = attr.ib(validator=attr.validators.optional(is_positive), default=None)
 
     def __attrs_post_init__(self):
         if self.k is None:
@@ -558,15 +582,15 @@ class WSection3d(AbstractWSection):
 
     def createFibers(self):
         if self._residualStress is not None and (
-                self._material.__class__ in
-                MATERIALS_WITH_RESIDUAL_STRESS_SUPPORT):
+            self._material.__class__ in MATERIALS_WITH_RESIDUAL_STRESS_SUPPORT
+        ):
             lastTag = self.createFibersWithResidualStress()
         else:
             matTag = self._material.tag
-            nff1 = np.ceil((self.nf1/self.d)*self.tf)
-            nfw1 = np.ceil((self.nf1/self.d)*(self.d - 2*self.tf))
-            nff2 = np.ceil((self.nf2/self.bf)*self.bf)
-            ops.patch('quad', matTag, )
+            nff1 = np.ceil((self.nf1 / self.d) * self.tf)
+            nfw1 = np.ceil((self.nf1 / self.d) * (self.d - 2 * self.tf))
+            nff2 = np.ceil((self.nf2 / self.bf) * self.bf)
+            ops.patch('quad', matTag)
             lastTag = matTag
 
         if self.k > self.tf:
@@ -575,14 +599,14 @@ class WSection3d(AbstractWSection):
 
     def createFibersWithResidualStress(self):
         frc = self._residualStress.frc
-        frt = -frc*(self.bf*self.tf)/(self.bf*self.tf + self.tw*self.dw)
+        frt = -frc * (self.bf * self.tf) / (self.bf * self.tf + self.tw * self.dw)
         nSectors = self._residualStress.nSectors
 
         # Create residual stress materials
         lehighStartTag = self._material.tag
         for i in range(nSectors):
-            x = (i + 0.5)/nSectors
-            fr = frc + x*(frt - frc)
+            x = (i + 0.5) / nSectors
+            fr = frc + x * (frt - frc)
             self._material.create(fr)
             self._material.tag += 1
         self._material.create(frt)
@@ -590,8 +614,8 @@ class WSection3d(AbstractWSection):
 
     def createFillets(self, matTag):
         r = self.k - self.tf  # Radius of fillet
-        area = (1 - 0.25*np.pi)*r**2  # Area of individual fillet
-        ybar = 2/(12 - 3*np.pi)*r  # Centroid of fillet from flange face
+        area = (1 - 0.25 * np.pi) * r**2  # Area of individual fillet
+        ybar = 2 / (12 - 3 * np.pi) * r  # Centroid of fillet from flange face
         ops.fiber(+self.d1 - (r - ybar), +self.b1 + (r - ybar), area, matTag)
         ops.fiber(-self.d1 + (r - ybar), +self.b1 + (r - ybar), area, matTag)
         ops.fiber(+self.d1 - (r - ybar), -self.b1 - (r - ybar), area, matTag)

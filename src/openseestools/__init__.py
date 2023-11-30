@@ -6,6 +6,7 @@ except ImportError:
         from openseespy import opensees
     except ImportError:
         import warnings
+
         warnings.warn('OpenSeesPy not found on this system.')
         opensees = None
 

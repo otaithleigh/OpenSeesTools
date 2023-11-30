@@ -19,7 +19,7 @@ __all__ = [
 
 
 @attr.s(auto_attribs=True, slots=True, repr=False)
-class SectionDiscretization():
+class SectionDiscretization:
     """Section discretized into constituent fibers.
 
     Use `SectionAnalysis.getDiscretization()` instead of creating discretized
@@ -36,6 +36,7 @@ class SectionDiscretization():
     fiberArea : np.ndarray
         Areas of the section fibers.
     """
+
     fiberMat: np.ndarray
     fiberLocY: np.ndarray
     fiberLocZ: np.ndarray
@@ -48,8 +49,9 @@ class SectionDiscretization():
         # Adjust the fiber locations so that the centroid is at (0, 0). This is
         # what OpenSees does internally, so we need to replicate this behavior
         # in order to return accurate Iz and Iy values.
-        (ybar, zbar, area) = nShapesCentroid(self.fiberLocY, self.fiberLocZ,
-                                             self.fiberArea)
+        (ybar, zbar, area) = nShapesCentroid(
+            self.fiberLocY, self.fiberLocZ, self.fiberArea
+        )
         self._centeredY = self.fiberLocY - ybar
         self._centeredZ = self.fiberLocZ - zbar
         self._totalArea = area
@@ -60,11 +62,11 @@ class SectionDiscretization():
 
     def getIz(self):
         """Return the total moment of inertia about the Z-axis."""
-        return np.sum(self.fiberArea*self._centeredY**2)
+        return np.sum(self.fiberArea * self._centeredY**2)
 
     def getIy(self):
         """Return the total moment of inertia about the Y-axis."""
-        return np.sum(self.fiberArea*self._centeredZ**2)
+        return np.sum(self.fiberArea * self._centeredZ**2)
 
     def getPerMaterialData(self, center=True):
         materialTags = np.unique(self.fiberMat)
@@ -83,16 +85,18 @@ class SectionDiscretization():
                 fiberLocZ = self.fiberLocZ[indices]
                 fiberLocY = self.fiberLocY[indices]
             partialArea.append(np.sum(fiberArea))
-            partialIz.append(np.sum(fiberArea*fiberLocY**2))
-            partialIy.append(np.sum(fiberArea*fiberLocZ**2))
+            partialIz.append(np.sum(fiberArea * fiberLocY**2))
+            partialIy.append(np.sum(fiberArea * fiberLocZ**2))
 
-        return pd.DataFrame({
-            'MaterialTag': materialTags,
-            'NumFibers': numFibers,
-            'Area': partialArea,
-            'Iz': partialIz,
-            'Iy': partialIy,
-        }).set_index('MaterialTag')
+        return pd.DataFrame(
+            {
+                'MaterialTag': materialTags,
+                'NumFibers': numFibers,
+                'Area': partialArea,
+                'Iz': partialIz,
+                'Iy': partialIy,
+            }
+        ).set_index('MaterialTag')
 
 
 # Index of the header row separator for different tabulate formats.
@@ -159,7 +163,10 @@ class SectionAnalysis(OpenSeesAnalysis):
     analysisID : optional
         Unique ID for the analysis. (default: 0)
     """
-    def __init__(self, sectionFactory: Callable[[], int], scratchPath=None, analysisID=0):
+
+    def __init__(
+        self, sectionFactory: Callable[[], int], scratchPath=None, analysisID=0
+    ):
         self._sectionFactory = sectionFactory
         self._cachedDiscretization: Optional[SectionDiscretization] = None
         super().__init__(scratchPath, analysisID)
@@ -302,8 +309,11 @@ class SectionAnalysis(OpenSeesAnalysis):
         if header_sep_loc is not None:
             bottom_sep_loc = _tabulate_bottom_row_sep_loc[tablefmt]
             tablelines = table.splitlines()
-            table = '\n'.join([
-                *tablelines[:bottom_sep_loc], tablelines[header_sep_loc],
-                *tablelines[bottom_sep_loc:]
-            ])
+            table = '\n'.join(
+                [
+                    *tablelines[:bottom_sep_loc],
+                    tablelines[header_sep_loc],
+                    *tablelines[bottom_sep_loc:],
+                ]
+            )
         print(table, file=file)

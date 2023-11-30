@@ -13,7 +13,7 @@ __all__ = [
 
 
 @attr.s(auto_attribs=True)
-class VariableAnalysis():
+class VariableAnalysis:
     """Analysis wrapper with support for multiple tolerances and algorithms.
 
     Parameters
@@ -39,6 +39,7 @@ class VariableAnalysis():
     >>> if error:
     ...     raise ops.OpenSeesError('analyze returned {}'.format(error))
     """
+
     test: str
     maxiters: int
     tolerances: typing.List[float]
@@ -71,8 +72,9 @@ class VariableAnalysis():
         for tol in self.tolerances:
             ops.test(self.test, tol, self.maxiters, self.pflag, self.norm)
             for alg in self.algorithms:
-                self.logger.debug(f'Running analysis with tolerance {tol:g}'
-                                  f' and algorithm {alg!r}')
+                self.logger.debug(
+                    f'Running analysis with tolerance {tol:g} and algorithm {alg!r}'
+                )
                 ops.algorithm(alg)
                 error = ops.analyze(*args)
                 if error == 0:

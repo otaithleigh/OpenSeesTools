@@ -11,9 +11,9 @@ import numpy as np
 
 from . import opensees as ops
 
-#===============================================================================
+# ===============================================================================
 # Globals
-#===============================================================================
+# ===============================================================================
 __all__ = [
     'areaCircularSector',
     'captureOutput',
@@ -35,9 +35,9 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
-#===============================================================================
+# ===============================================================================
 # Utilities
-#===============================================================================
+# ===============================================================================
 def getClassLogger(cls) -> logging.Logger:
     """Get a logger scoped to the requested class.
 
@@ -100,21 +100,21 @@ def scratchFileFactory(analysisName, scratchPath=None, analysisID=0):
         suffix : str, optional
             Suffix to use for the scratch file. (default: '')
         """
-        return scratchPath/f'{analysisName}_{name}_{analysisID}{suffix}'
+        return scratchPath / f'{analysisName}_{name}_{analysisID}{suffix}'
 
     return scratchFile
 
 
-class OpenSeesAnalysis():
+class OpenSeesAnalysis:
     def __init__(self, scratchPath=None, analysisID=None):
         self.logger = getClassLogger(self.__class__)
-        self.scratchFile = scratchFileFactory(self.__class__.__name__,
-                                              scratchPath, analysisID)
+        self.scratchFile = scratchFileFactory(
+            self.__class__.__name__, scratchPath, analysisID
+        )
         self.deleteFiles = True
 
 
-def updateRayleighDamping(modeA, ratioA, modeB, ratioB,
-                          solver='-genBandArpack'):
+def updateRayleighDamping(modeA, ratioA, modeB, ratioB, solver='-genBandArpack'):
     """Run an eigenvalue analysis and set proportional damping based on the
     current state of the structure.
 
@@ -138,30 +138,32 @@ def updateRayleighDamping(modeA, ratioA, modeB, ratioB,
     frequencyB = np.sqrt(eigenvalues[modeB - 1])
 
     # Compute the damping factors
-    k = 2.0/(frequencyA**2 - frequencyB**2)
-    aM = k*frequencyA*frequencyB*(ratioB*frequencyA - ratioA*frequencyB)
-    aK = k*(ratioA*frequencyA - ratioB*frequencyB)
+    k = 2.0 / (frequencyA**2 - frequencyB**2)
+    aM = k * frequencyA * frequencyB * (ratioB * frequencyA - ratioA * frequencyB)
+    aK = k * (ratioA * frequencyA - ratioB * frequencyB)
     ops.rayleigh(aM, 0.0, 0.0, aK)
 
 
-#===============================================================================
+# ===============================================================================
 # Centroids and things
-#===============================================================================
+# ===============================================================================
 def areaCircularSector(d, R):
-    theta = 2*np.arccos(np.abs(d)/R)
-    area = 0.5*R**2*(theta - np.sin(theta))
+    theta = 2 * np.arccos(np.abs(d) / R)
+    area = 0.5 * R**2 * (theta - np.sin(theta))
     return area
 
 
 def centroidCircularSector(d, R):
-    theta = 2*np.arccos(np.abs(d)/R)
+    theta = 2 * np.arccos(np.abs(d) / R)
     # NumPy sign gives 0.0 for zeroes, but we want zeroes to be positive. True
     # gets cast to 1.0, and False to 0.0.
     sign = np.sign(d) + (d == 0.0)
     if theta == 0.0:
-        centroid = sign*R
+        centroid = sign * R
     else:
-        centroid = sign*4*R*np.sin(0.5*theta)**3/(3*(theta - np.sin(theta)))
+        centroid = (
+            sign * 4 * R * np.sin(0.5 * theta) ** 3 / (3 * (theta - np.sin(theta)))
+        )
     return centroid
 
 
@@ -202,7 +204,7 @@ def nShapesCentroid(x, y, A):
     area = np.sum(A)
     logger.debug(f'xArea={xArea:g}, yArea={yArea:g}, area={area:g}')
 
-    return xArea/area, yArea/area, area
+    return xArea / area, yArea / area, area
 
 
 def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
@@ -258,7 +260,7 @@ def fillOutNumbers(peaks, rate, axis=0) -> np.ndarray:
 
     # Determine the number of steps between each peak.
     peaksDiff = np.diff(peaks, axis=axis)
-    numsteps = np.round(np.max(np.abs(peaksDiff/rate), axis=axes)).astype('int')
+    numsteps = np.round(np.max(np.abs(peaksDiff / rate), axis=axes)).astype('int')
 
     numbers = []
     numPeaks = peaks.shape[axis]
@@ -308,8 +310,9 @@ def linspacePeaks(peaks, num, axis=0) -> np.ndarray:
     numbers = []
     numPeaks = peaks.shape[axis]
     if num < 0:
-        raise ValueError('Number of additional steps must be non-negative.'
-                         f' (got {num!r})')
+        raise ValueError(
+            'Number of additional steps must be non-negative.' f' (got {num!r})'
+        )
 
     for i in range(numPeaks - 1):
         start = np.take(peaks, i, axis)
@@ -320,15 +323,17 @@ def linspacePeaks(peaks, num, axis=0) -> np.ndarray:
     return np.concatenate(numbers, axis)
 
 
-def linspaceCoords2d(xi,
-                     yi,
-                     xj,
-                     yj,
-                     numElements,
-                     iOffset=0.0,
-                     jOffset=0.0,
-                     offsetFactor=False,
-                     imperf=0.0):
+def linspaceCoords2d(
+    xi,
+    yi,
+    xj,
+    yj,
+    numElements,
+    iOffset=0.0,
+    jOffset=0.0,
+    offsetFactor=False,
+    imperf=0.0,
+):
     """Generate evenly-spaced coordinates for a 2D member, with optional rigid
     offset and sinusoidal imperfection calculation.
 
@@ -364,17 +369,21 @@ def linspaceCoords2d(xi,
         second row. Can be unpacked as ``x, y = linspaceCoords2d(*args)``.
     """
     # Plop out x- and y-coordinates on a line, and then rotate/translate into place.
-    L = ((xj - xi)**2 + (yj - yi)**2)**0.5
+    L = ((xj - xi) ** 2 + (yj - yi) ** 2) ** 0.5
     if offsetFactor:
-        iOffset = iOffset*L
-        jOffset = jOffset*L
+        iOffset = iOffset * L
+        jOffset = jOffset * L
     L -= iOffset + jOffset
     xCoords = iOffset + np.linspace(0, L, numElements + 1)
-    yCoords = imperf*L*np.sin(np.pi*(xCoords - iOffset)/L)
+    yCoords = imperf * L * np.sin(np.pi * (xCoords - iOffset) / L)
 
     alpha = np.arctan2(yj - yi, xj - xi)
-    R = np.array([[np.cos(alpha), -np.sin(alpha)],
-                  [np.sin(alpha), +np.cos(alpha)]])
+    R = np.array(
+        [
+            [np.cos(alpha), -np.sin(alpha)],
+            [np.sin(alpha), +np.cos(alpha)],
+        ]
+    )
 
     coords = R @ np.vstack((xCoords, yCoords))
     coords[0, :] += xi
@@ -383,19 +392,21 @@ def linspaceCoords2d(xi,
     return coords
 
 
-def linspaceCoords3d(xi: float,
-                     yi: float,
-                     zi: float,
-                     xj: float,
-                     yj: float,
-                     zj: float,
-                     numElements: int,
-                     iOffset: float = 0.0,
-                     jOffset: float = 0.0,
-                     offsetIsFactor: bool = False,
-                     imperf: float = 0.0,
-                     imperfAngle: float = 0.0,
-                     imperfPlane: np.ndarray = None):
+def linspaceCoords3d(
+    xi: float,
+    yi: float,
+    zi: float,
+    xj: float,
+    yj: float,
+    zj: float,
+    numElements: int,
+    iOffset: float = 0.0,
+    jOffset: float = 0.0,
+    offsetIsFactor: bool = False,
+    imperf: float = 0.0,
+    imperfAngle: float = 0.0,
+    imperfPlane: np.ndarray = None,
+):
     """Generate evenly-spaced coordinates for a 3D member, with optional rigid
     offset and sinusoidal imperfection calculation.
 
@@ -460,9 +471,9 @@ def linspaceCoords3d(xi: float,
 
     if imperfPlane is not None:
         # Calculate the imperfection in polar coordinates about the local x-axis
-        imperf_r = imperf*L*np.sin(np.pi*(xCoords - iOffset)/L)
-        zCoords = imperf_r*np.cos(imperfAngle)
-        yCoords = imperf_r*np.sin(imperfAngle)
+        imperf_r = imperf * L * np.sin(np.pi * (xCoords - iOffset) / L)
+        zCoords = imperf_r * np.cos(imperfAngle)
+        yCoords = imperf_r * np.sin(imperfAngle)
 
         # Calculate the local Cartesian system
         local_x = np.array([x, y, z])
@@ -470,9 +481,9 @@ def linspaceCoords3d(xi: float,
         local_z = np.cross(local_x, local_y)
 
         # Unit vectors
-        local_x = local_x/np.linalg.norm(local_x)
-        local_y = local_y/np.linalg.norm(local_y)
-        local_z = local_z/np.linalg.norm(local_z)
+        local_x = local_x / np.linalg.norm(local_x)
+        local_y = local_y / np.linalg.norm(local_y)
+        local_z = local_z / np.linalg.norm(local_z)
 
         # Rotate to global coordinates and translate back to original
         R = np.vstack((local_x, local_y, local_z)).T
@@ -485,9 +496,9 @@ def linspaceCoords3d(xi: float,
         φ = np.arctan2(y, x)
         θ = np.arctan2(np.sqrt(x**2 + y**2), z)
 
-        xCoords = rCoords*np.sin(θ)*np.cos(φ)
-        yCoords = rCoords*np.sin(θ)*np.sin(φ)
-        zCoords = rCoords*np.cos(θ)
+        xCoords = rCoords * np.sin(θ) * np.cos(φ)
+        yCoords = rCoords * np.sin(θ) * np.sin(φ)
+        zCoords = rCoords * np.cos(θ)
         coords = np.vstack((xCoords, yCoords, zCoords))
 
     # Move origin back
@@ -495,9 +506,9 @@ def linspaceCoords3d(xi: float,
     return coords
 
 
-#===============================================================================
+# ===============================================================================
 # Output handling
-#===============================================================================
+# ===============================================================================
 def captureOutput(func):
     """Decorator to wrap a function, capturing stdout and stderr.
 
@@ -574,6 +585,7 @@ def captureOutput(func):
     >>> badOpenSeesCall.stderr.getvalue()
     'WARNING insufficient args: model -ndm ndm <-ndf ndf>\\n'
     """
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         wrapper.stdout = io.StringIO()
@@ -585,9 +597,9 @@ def captureOutput(func):
     return wrapper
 
 
-#===============================================================================
+# ===============================================================================
 # Fiber patches
-#===============================================================================
+# ===============================================================================
 def patchRect2d(matTag, nf, width, startHeight, endHeight):
     """Create a quadrilateral patch suitable for two-dimensional analyses.
 
@@ -611,8 +623,20 @@ def patchRect2d(matTag, nf, width, startHeight, endHeight):
     width = float(width)
     startHeight = float(startHeight)
     endHeight = float(endHeight)
-    ops.patch('quad', int(matTag), int(nf), 1, startHeight, -width/2, endHeight,
-              -width/2, endHeight, width/2, startHeight, width/2)
+    ops.patch(
+        'quad',
+        int(matTag),
+        int(nf),
+        1,
+        startHeight,
+        -width / 2,
+        endHeight,
+        -width / 2,
+        endHeight,
+        width / 2,
+        startHeight,
+        width / 2,
+    )
 
 
 def patchHalfCircTube2d(matTag, nf, center, side, D, t):
@@ -645,13 +669,12 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
         if `t` is more than 0.5*`D`
     """
     if side.lower() not in ['top', 'bottom']:
-        raise ValueError(
-            "patchHalfCircTube2d: side should be either 'top' or 'bottom'")
+        raise ValueError("patchHalfCircTube2d: side should be either 'top' or 'bottom'")
     if D <= 0.0:
         raise ValueError('patchHalfCircTube2d: D should be a positive value')
     if t <= 0.0:
         raise ValueError('patchHalfCircTube2d: t should be a positive value')
-    if t > 0.5*D:
+    if t > 0.5 * D:
         raise ValueError('patchHalfCircTube2d: t is too large relative to D')
 
     if side.lower() == 'top':
@@ -659,19 +682,16 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
     else:
         sign = -1.0
 
-    ro = D/2
-    ri = D/2 - t
-    ystep = ro/nf
+    ro = D / 2
+    ri = D / 2 - t
+    ystep = ro / nf
 
     for i in range(nf):
-        yfar = ro - i*ystep
-        ynear = max(ro - (i + 1)*ystep, 0.0)
+        yfar = ro - i * ystep
+        ynear = max(ro - (i + 1) * ystep, 0.0)
 
         x = [0.0, 0.0]
-        y = [
-            centroidCircularSector(yfar, ro),
-            centroidCircularSector(ynear, ro)
-        ]
+        y = [centroidCircularSector(yfar, ro), centroidCircularSector(ynear, ro)]
         A = [-areaCircularSector(yfar, ro), areaCircularSector(ynear, ro)]
 
         if yfar >= ri and ynear >= ri:
@@ -689,7 +709,7 @@ def patchHalfCircTube2d(matTag, nf, center, side, D, t):
             A.append(-areaCircularSector(ynear, ri))
 
         _, centroid, area = nShapesCentroid(x, y, A)
-        yf = center + sign*centroid
+        yf = center + sign * centroid
         logger.debug(f'Creating fiber at {yf:g} with area {area:g}')
         ops.fiber(yf, 0.0, area, matTag)
 
@@ -718,9 +738,9 @@ def fourFiberSectionGJ(secTag, matTag, A, Iy, Iz, GJ):
         fourFiberSectionGJ(None, matTag, A, Iy, Iz, GJ)
         return
 
-    fiberA = float(0.25*A)
-    fiberZ = float(np.sqrt(Iy/A))
-    fiberY = float(np.sqrt(Iz/A))
+    fiberA = float(0.25 * A)
+    fiberZ = float(np.sqrt(Iy / A))
+    fiberY = float(np.sqrt(Iz / A))
 
     ops.fiber(+fiberY, +fiberZ, fiberA, int(matTag))
     ops.fiber(+fiberY, -fiberZ, fiberA, int(matTag))
@@ -747,8 +767,8 @@ def twoFiberSection(secTag, matTag, A, Iz):
         twoFiberSection(None, matTag, A, Iz)
         return
 
-    fiberA = float(0.5*A)
-    fiberY = float(np.sqrt(Iz/A))
+    fiberA = float(0.5 * A)
+    fiberY = float(np.sqrt(Iz / A))
 
     ops.fiber(+fiberY, 0.0, fiberA, int(matTag))
     ops.fiber(-fiberY, 0.0, fiberA, int(matTag))

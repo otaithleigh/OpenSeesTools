@@ -5,6 +5,9 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+# ------------------------------------------------------------------------------
+# Metadata
+# ------------------------------------------------------------------------------
 [project]
 name = "openseestools"
 version = "0.3.0"
@@ -29,3 +32,37 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/otaithleigh/OpenSeesTools"
+
+# ------------------------------------------------------------------------------
+# Linting
+# ------------------------------------------------------------------------------
+[tool.ruff]
+line-length = 88
+select = [
+    'B',
+    'C4',
+    'E',
+    'F',
+    'NPY',
+    'PIE',
+    'PL',
+    'RUF',
+    'TRY',
+    'W',
+]
+ignore = [
+    'E501',  # Line length
+    'E731',  # I don't like this rule, and I don't do it often
+    'E741',  # Ambiguous variable name -- they're not ambiguous in domain context
+    'PLR0911',  # annoying heuristic
+    'PLR0912',  # annoying heuristic
+    'PLR0913',  # annoying heuristic
+    'PLR0915',  # annoying heuristic
+    'PLR2004',  # "magic values" -- too many false positives
+    'PLW2901',  # This is intentional shadowing every time I've done it
+    'TRY003',  # Messages in exception
+    'TRY200',  # Duplicate with B904
+]
+
+[tool.ruff.format]
+quote-style = "single"

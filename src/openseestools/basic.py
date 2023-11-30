@@ -414,33 +414,25 @@ def linspaceCoords3d(
     ----------
     xi, yi, zi : float
         Coordinates of the i workpoint.
-
     xj, yj, zj : float
         Coordinates of the j workpoint.
-
     numElements : int
         Number of elements the member will consist of. numElements + 1 points
         are generated.
-
     iOffset : float, optional
         Distance from the i workpoint to the first coordinate. (default: 0.0)
-
     jOffset : float, optional
         Distance from the j workpoint to the last coordinate. (default: 0.0)
-
     offsetIsFactor : bool, optional
         If True, `iOffset` and `jOffset` specify offsets as a factor of the
         workpoint-to-workpoint length instead of absolute lengths. (default:
         False)
-
     imperf : float, optional
         Sinusoidal imperfection as a factor of the i-node to j-node length.
         (default: 0.0)
-
     imperfAngle : float, optional
         Angle of the imperfection from the xz plane defined by `imperfPlane`.
         (default: 0.0)
-
     imperfPlane : array_like, optional
         Vector that, along with the vector defined by the workpoint coordinates,
         defines the xz plane for the imperfection. This is usually the same
@@ -522,8 +514,7 @@ def captureOutput(func):
     >>> func()
     >>> func.stdout
 
-
-        .. note::
+    .. note::
 
         Functions that do not print to Python's standard output or standard
         error will not be successfully wrapped by this decorator. For example,
